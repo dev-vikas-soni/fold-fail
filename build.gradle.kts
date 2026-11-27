@@ -4,5 +4,5 @@ plugins {
 
 allprojects {
     group = "io.github.dev-vikas-soni.foldfail"
-    version = "0.1.0-SNAPSHOT"
+    version = "0.7.0"
 }
