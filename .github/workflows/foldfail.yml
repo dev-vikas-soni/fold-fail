@@ -32,12 +32,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run Test Suite & Generate SARIF Report
-        run: ./gradlew test
+      - name: Run FoldFail Verification & Audit via Check
+        run: ./gradlew check
 
       - name: Upload SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: '**/build/reports/foldfail/foldfail-report.sarif'
+          sarif_file: build/reports/foldfail/foldfail-report.sarif
           category: foldfail-audit
