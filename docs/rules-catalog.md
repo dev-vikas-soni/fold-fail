@@ -17,10 +17,10 @@ Viewlint rules are organized into three primary categories: Manifest Rules, XML 
 ### FF002 — Activity aspect ratio is restricted
 - **Problem Addressed**: Fixed aspect ratio constraints (`maxAspectRatio` or `minAspectRatio`) cause letterboxing or pillarboxing on wider tablets and foldables.
 - **Analyzed Constructs**: `<activity>` elements in `AndroidManifest.xml`.
-- **Detection Conditions**: Activity specifies `maxAspectRatio` or `minAspectRatio` while effective `resizeableActivity` is `false` (or absent without resizable default).
+- **Detection Conditions**: Activity specifies `maxAspectRatio` or `minAspectRatio` while effective `resizeableActivity` is `false` (resolved via explicit activity attribute > explicit application attribute > target SDK platform default: `true` for `targetSdkVersion` $\ge 24$, `false` for `targetSdkVersion` $< 24$ or omitted).
 - **Severity**: `WARNING`
 - **Confidence**: `MEDIUM`
-- **Remediation**: Remove fixed aspect ratio constraints or ensure `resizeableActivity="true"` is explicitly configured.
+- **Remediation**: Remove fixed aspect ratio constraints or ensure `resizeableActivity="true"` is explicitly configured. Note that on Android 16 (API 36), aspect-ratio restrictions are ignored on displays with smallest width >= 600dp unless opted out, but restrictions remain active on compact screens.
 
 ---
 

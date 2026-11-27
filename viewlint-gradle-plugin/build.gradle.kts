@@ -33,11 +33,11 @@ gradlePlugin {
     vcsUrl.set("https://github.com/dev-vikas-soni/viewlint")
     plugins {
         create("viewlint") {
-            id = "com.viewlint"
+            id = "io.github.dev-vikas-soni.viewlint"
             implementationClass = "com.viewlint.gradle.ViewlintPlugin"
             displayName = "Viewlint — Android Adaptive Quality Auditor"
             description = "Static analysis for Android adaptive UI risks across phones, foldables, tablets, split-screen and resizable windows. Detects manifest, XML layout and Jetpack Compose issues, with configurable quality gates and SARIF reporting."
-            tags.set(listOf("android", "kotlin", "compose", "foldable", "adaptive", "static-analysis", "sarif", "tablet", "multi-window"))
+            tags.set(listOf("android", "kotlin", "static-analysis", "adaptive-ui", "foldables", "jetpack-compose", "sarif"))
         }
     }
 }

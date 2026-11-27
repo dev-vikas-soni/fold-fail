@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" width="800" height="200">
+  <g transform="translate(40, 30)">
+    <rect x="0" y="0" width="140" height="140" rx="28" fill="none" stroke="currentColor" stroke-width="4"/>
+
+    <g stroke="currentColor" stroke-width="6" stroke-linecap="square" fill="none">
+      <path d="M 26 42 L 26 26 L 42 26"/>
+      <path d="M 98 26 L 114 26 L 114 42"/>
+      <path d="M 26 98 L 26 114 L 42 114"/>
+      <path d="M 98 114 L 114 114 L 114 98"/>
+    </g>
+
+    <path d="M 38 36 L 54 36 L 70 104 L 54 104 Z" fill="currentColor"/>
+    <path d="M 84 36 L 100 36 L 82 62 L 66 62 Z" fill="currentColor"/>
+    <path d="M 76 74 L 92 74 L 70 104 L 54 104 Z" fill="currentColor"/>
+  </g>
+
+  <text x="210" y="112" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="64" font-weight="800" fill="currentColor" letter-spacing="-1">Viewlint</text>
+
+  <text x="212" y="148" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" fill="currentColor" letter-spacing="3">ANDROID ADAPTIVE QUALITY AUDITOR</text>
+</svg>

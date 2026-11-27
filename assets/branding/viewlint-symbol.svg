@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Container plate -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="#0B0F19" stroke="#1E293B" stroke-width="4"/>
+
+  <!-- Layout Boundary Crop Marks (Thicker stroke for 16px/32px crispness) -->
+  <g stroke="#38BDF8" stroke-width="16" stroke-linecap="square" fill="none">
+    <path d="M 112 160 L 112 112 L 160 112"/>
+    <path d="M 352 112 L 400 112 L 400 160"/>
+    <path d="M 112 352 L 112 400 L 160 400"/>
+    <path d="M 352 400 L 400 400 L 400 352"/>
+  </g>
+
+  <!-- Central Adaptive Viewport Emblem ('V' Monogram with Harmonized Vertex) -->
+  <g fill="#F8FAFC">
+    <!-- Left Fixed Column -->
+    <path d="M 152 136 L 208 136 L 256 368 L 200 368 Z"/>
+
+    <!-- Right Adaptive Wing (Wider 36px Inspection Slot for 16px clarity) -->
+    <path d="M 304 136 L 360 136 L 296 232 L 240 232 Z" fill="#06B6D4"/>
+    <path d="M 280 268 L 336 268 L 256 368 L 200 368 L 232 320 Z" fill="#06B6D4"/>
+  </g>
+</svg>

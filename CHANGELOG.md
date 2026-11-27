@@ -1,11 +1,38 @@
 # Viewlint Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to Viewlint will be documented in this file.
 
-## [0.7.1] — Rebrand to Viewlint & Self-Contained Publishing
-- Fully rebranded from FoldFail to **Viewlint** (`com.viewlint` Gradle plugin ID, `com.viewlint` package namespace, `viewlint` task).
-- Implemented self-contained plugin artifact packaging with Gradle Shadow plugin (`com.gradleup.shadow`), bundling core, analyzer, and Kotlin compiler embeddable dependencies.
-- Updated all documentation, workflows, and test suites.
+## [0.7.1] — Official First Public Release
+
+### Highlights
+- **First Public Viewlint Release**: Official public launch of Viewlint (`io.github.dev-vikas-soni.viewlint` Gradle plugin ID, `com.viewlint` package namespace, `viewlint` extension and task).
+- **Ten Adaptive UI Static-Analysis Rules**: Full support for rules FF001–FF010 auditing Android Manifests, XML Layout resources, and Jetpack Compose `@Composable` functions.
+- **Gradle Lifecycle Integration**: Automatic wiring into `./gradlew check` standard verification lifecycle with configurable quality gates (`NEVER`, `ERROR`, `WARNING`, `NEW`).
+- **Multi-Format Reporting**: Export diagnostic reports in Console, JSON (`viewlint-report.json`), HTML (`viewlint-report.html`), and SARIF 2.1.0 (`viewlint-report.sarif`).
+- **Baselines & Quality Control**: Baseline signature generation and suppression (`viewlint-baseline.txt`) for managing legacy technical debt.
+
+### Engineering Improvements
+- **FF002 Precedence & Target SDK Resolution**: Implemented accurate `resizeableActivity` evaluation order (activity attribute > application attribute > target SDK platform default).
+- **Target-SDK-Dependent Defaults**: Correctly defaults `resizeableActivity` to `true` for `targetSdkVersion` >= 24 and `false` for `targetSdkVersion` < 24.
+- **Conservative Fallback**: Uses a conservative fallback defaulting `resizeableActivity` to `false` when `targetSdkVersion` is missing or unparseable.
+- **Android 16 Documentation**: Documented platform orientation and aspect-ratio restriction override behavior on Android 16 (API 36) for displays with smallest width >= 600dp.
+- **Shaded Plugin Artifact**: Fully shaded self-contained Gradle plugin distribution bundling `viewlint-core` and `viewlint-analyzer` to prevent downstream dependency leaks.
+- **Test Suite Coverage**: 36 comprehensive tests covering rule execution, report generation, configuration-cache compatibility, and target SDK precedence.
+
+### Installation
+
+```kotlin
+plugins {
+    id("io.github.dev-vikas-soni.viewlint") version "0.7.1"
+}
+```
+
+### Known Limitations
+- Viewlint performs static code analysis and does not guarantee runtime rendering compatibility or replace physical device testing.
+- Target SDK resolution relies on `AndroidManifest.xml`; when omitted, FF002 defaults conservatively to `false`.
+- Compose rules (FF007–FF010) use structural pattern heuristics and may require baseline suppression for complex custom layout implementations.
+
+---
 
 ## [0.7.0] — Gradle Verification Lifecycle Integration
 - Added automatic integration with `./gradlew check` verification lifecycle.

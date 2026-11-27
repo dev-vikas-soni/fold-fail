@@ -20,7 +20,7 @@ class ViewlintPluginTest {
             File(projectDir, "build.gradle.kts").writeText(
                 """
                 plugins {
-                    id("com.viewlint")
+                    id("io.github.dev-vikas-soni.viewlint")
                 }
                 """.trimIndent()
             )
@@ -79,7 +79,7 @@ class ViewlintPluginTest {
             File(projectDir, "build.gradle.kts").writeText(
                 """
                 plugins {
-                    id("com.viewlint")
+                    id("io.github.dev-vikas-soni.viewlint")
                 }
                 """.trimIndent()
             )
@@ -130,7 +130,7 @@ class ViewlintPluginTest {
             File(projectDir, "build.gradle.kts").writeText(
                 """
                 plugins {
-                    id("com.viewlint")
+                    id("io.github.dev-vikas-soni.viewlint")
                 }
                 """.trimIndent()
             )
@@ -188,7 +188,7 @@ class ViewlintPluginTest {
             File(projectDir, "build.gradle.kts").writeText(
                 """
                 plugins {
-                    id("com.viewlint")
+                    id("io.github.dev-vikas-soni.viewlint")
                 }
 
                 viewlint {
