@@ -4,10 +4,6 @@ pluginManagement {
         mavenCentral()
         google()
     }
-
-    plugins {
-        id("org.jetbrains.kotlin.jvm") version "2.3.20"
-    }
 }
 
 dependencyResolutionManagement {
