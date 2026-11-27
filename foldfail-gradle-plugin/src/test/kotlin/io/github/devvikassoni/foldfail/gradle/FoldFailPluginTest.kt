@@ -238,7 +238,9 @@ class FoldFailPluginTest {
             assertTrue("SARIF report should exist", sarifReport.exists())
 
             if (sarifReport.exists()) {
-                val rootReportsDir = File("build/reports/foldfail")
+                val currentDir = File(System.getProperty("user.dir"))
+                val rootDir = if (currentDir.name == "foldfail-gradle-plugin") currentDir.parentFile else currentDir
+                val rootReportsDir = File(rootDir, "build/reports/foldfail")
                 rootReportsDir.mkdirs()
                 sarifReport.copyTo(File(rootReportsDir, "foldfail-report.sarif"), overwrite = true)
             }
