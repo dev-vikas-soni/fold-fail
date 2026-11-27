@@ -1,4 +1,4 @@
-name: Viewlint Adaptive Quality Audit
+name: Viewlint CI
 
 on:
   push:
@@ -10,12 +10,10 @@ on:
 
 permissions:
   contents: read
-  security-events: write
-  actions: read
 
 jobs:
-  viewlint-audit:
-    name: Run Viewlint Audit & Upload SARIF
+  build-and-test:
+    name: Build & Test Suite
     runs-on: ubuntu-latest
 
     steps:
@@ -32,12 +30,5 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run Test Suite & Generate SARIF Report
-        run: ./gradlew test viewlint
-
-      - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: '**/build/reports/viewlint/viewlint-report.sarif'
-          category: viewlint-audit
+      - name: Run Build, Test Suite & Viewlint Audit
+        run: ./gradlew check viewlint
