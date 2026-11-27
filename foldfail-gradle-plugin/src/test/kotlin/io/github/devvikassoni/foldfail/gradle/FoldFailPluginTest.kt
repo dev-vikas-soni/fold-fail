@@ -237,6 +237,12 @@ class FoldFailPluginTest {
             assertTrue("HTML report should exist", htmlReport.exists())
             assertTrue("SARIF report should exist", sarifReport.exists())
 
+            if (sarifReport.exists()) {
+                val rootReportsDir = File("build/reports/foldfail")
+                rootReportsDir.mkdirs()
+                sarifReport.copyTo(File(rootReportsDir, "foldfail-report.sarif"), overwrite = true)
+            }
+
             assertTrue("JSON contains FF001", jsonReport.readText().contains("FF001"))
             assertTrue("HTML contains FF001", htmlReport.readText().contains("FF001"))
             assertTrue("SARIF contains FF001", sarifReport.readText().contains("FF001"))

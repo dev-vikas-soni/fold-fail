@@ -32,8 +32,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run FoldFail Test Suite & Generate Reports
-        run: ./gradlew test
+      - name: Run FoldFail Verification & Audit
+        run: ./gradlew check
 
       - name: Upload SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
