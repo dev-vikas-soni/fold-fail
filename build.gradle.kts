@@ -3,6 +3,6 @@ plugins {
 }
 
 allprojects {
-    group = "io.github.dev-vikas-soni.foldfail"
+    group = "com.viewlint"
     version = "0.7.1"
 }
