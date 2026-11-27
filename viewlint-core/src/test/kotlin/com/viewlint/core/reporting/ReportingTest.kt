@@ -1,13 +1,14 @@
 package com.viewlint.core.reporting
 
 import com.viewlint.core.Confidence
-import com.viewlint.core.ViewlintFinding
 import com.viewlint.core.Severity
+import com.viewlint.core.ViewlintFinding
 import com.viewlint.core.reporting.baseline.ViewlintBaseline
 import com.viewlint.core.reporting.html.HtmlReportWriter
 import com.viewlint.core.reporting.json.JsonReportWriter
 import com.viewlint.core.reporting.sarif.SarifReportWriter
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -20,8 +21,8 @@ class ReportingTest {
         title = "Activity orientation is restricted",
         message = "MainActivity restricts orientation to 'portrait'.",
         severity = Severity.WARNING,
-        confidence = Confidence.MEDIUM,
-        file = "AndroidManifest.xml",
+        confidence = Confidence.HIGH,
+        file = "src/main/AndroidManifest.xml",
         evidence = "android:screenOrientation=\"portrait\"",
         remediation = "Review orientation restriction."
     )
@@ -46,14 +47,28 @@ class ReportingTest {
         val json = JsonReportWriter.write(sampleReport)
         assertTrue(json.contains("\"ruleId\": \"FF001\""))
         assertTrue(json.contains("\"projectName\": \"test-project\""))
+        assertTrue(json.contains("\"confidence\": \"HIGH\""))
     }
 
     @Test
-    fun `HtmlReportWriter generates valid html`() {
+    fun `HtmlReportWriter generates rich developer-tool html report with top risks and screen summaries`() {
         val html = HtmlReportWriter.write(sampleReport)
         assertTrue(html.contains("<!DOCTYPE html>"))
-        assertTrue(html.contains("FF001"))
+        assertTrue(html.contains("Viewlint"))
+        assertTrue(html.contains("Adaptive Quality Report"))
         assertTrue(html.contains("test-project"))
+        assertTrue(html.contains("FF001"))
+        assertTrue(html.contains("HIGH CONFIDENCE"))
+        assertTrue(html.contains("Top Adaptive Risks"))
+        assertTrue(html.contains("Screen & File Risk Summaries"))
+        assertTrue(html.contains("searchInput"))
+        assertTrue(html.contains("controls-bar"))
+        assertTrue(html.contains("MEDIUM ADAPTIVE RISK"))
+
+        // Verify offline rendering (no external CDN scripts or remote fonts)
+        assertFalse(html.contains("https://cdn."))
+        assertFalse(html.contains("https://cdnjs."))
+        assertFalse(html.contains("https://stackpath."))
     }
 
     @Test
@@ -79,7 +94,7 @@ class ReportingTest {
                 message = "Details...",
                 severity = Severity.WARNING,
                 confidence = Confidence.MEDIUM,
-                file = "AndroidManifest.xml",
+                file = "src/main/AndroidManifest.xml",
                 evidence = "android:maxAspectRatio=\"2.4\"",
                 remediation = "Review."
             )

@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "io.github.dev-vikas-soni"
-    version = "0.7.1"
+    version = "0.8.0"
 
     plugins.withId("org.jetbrains.kotlin.jvm") {
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
@@ -113,7 +113,7 @@ tasks.register("viewlint") {
             String::class.java,
             String::class.java,
             String::class.java
-        ).newInstance("1.0", "Viewlint", "0.7.1", java.time.Instant.now().toString(), project.name)
+        ).newInstance("1.0", "Viewlint", "0.8.0", java.time.Instant.now().toString(), project.name)
 
         val report = reportClass.getConstructor(metadataClass, summaryClass, List::class.java)
             .newInstance(metadata, summary, findings)

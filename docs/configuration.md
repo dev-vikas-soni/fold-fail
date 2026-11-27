@@ -21,7 +21,7 @@ Viewlint is configured via the `viewlint` extension in your Gradle build files.
 
 ```kotlin
 plugins {
-    id("io.github.dev-vikas-soni.viewlint") version "0.7.1"
+    id("io.github.dev-vikas-soni.viewlint") version "0.8.0"
 }
 
 viewlint {

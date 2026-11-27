@@ -36,7 +36,7 @@ class RestrictiveModifierChainsAnalyzer : ViewlintRule {
                                 title = "Restrictive modifier chain combination",
                                 message = "Composable '${comp.name}' combines fixed width and height or size modifiers, heavily constraining space across screen size changes.",
                                 severity = Severity.WARNING,
-                                confidence = Confidence.MEDIUM,
+                                confidence = Confidence.HIGH,
                                 file = sourcePath.toString(),
                                 evidence = comp.modifierCalls.filter { it.contains("dp") }.joinToString(", "),
                                 remediation = "Avoid locking both width and height to fixed dp values. Use weight, fillMaxSize, or responsive sizing constraints."

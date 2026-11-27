@@ -31,7 +31,7 @@ Add the Viewlint Gradle plugin from the Gradle Plugin Portal to your module or r
 
 ```kotlin
 plugins {
-    id("io.github.dev-vikas-soni.viewlint") version "0.7.1"
+    id("io.github.dev-vikas-soni.viewlint") version "0.8.0"
 }
 ```
 

@@ -2,6 +2,26 @@
 
 All notable changes to Viewlint will be documented in this file.
 
+## [0.8.0] — Analyzer Precision & Report Intelligence Upgrade
+
+### Highlights
+- **Context-Aware Compose Dimension Analysis (FF007)**: Added numeric `dp` value parsing, component-role awareness (excluding standard touch targets <= 48dp, icons, avatars, badges, chips, dividers, spacers), range modifier handling (widthIn/heightIn min bounds), and component-specific contextual messages.
+- **Top Adaptive Risks Dashboard**: Redesigned HTML report header featuring a prioritized Top Adaptive Risks dashboard ranking critical findings by deterministic risk scores.
+- **Screen & File Level Risk Summaries**: Added screen/file risk breakdown tables displaying risk counts, primary severities, and primary rule IDs per file.
+- **Confidence Rationale & Deterministic Calibration**: Formalized Confidence model (HIGH, MEDIUM, LOW) with human-readable rationale in finding cards and report outputs.
+- **FF009 Screen-Level Container Boundary Analysis**: Focused FF009 on genuine screen-level containers and dashboards (*Screen, *Page, Scaffold, LazyVerticalGrid), eliminating noise on leaf controls.
+- **Required Size & Modifier Chain Calibrations**: Calibrated Confidence.HIGH for container requiredSize overrides and locked modifier chains.
+
+### Installation
+
+```kotlin
+plugins {
+    id("io.github.dev-vikas-soni.viewlint") version "0.8.0"
+}
+```
+
+---
+
 ## [0.7.1] — Official First Public Release
 
 ### Highlights
