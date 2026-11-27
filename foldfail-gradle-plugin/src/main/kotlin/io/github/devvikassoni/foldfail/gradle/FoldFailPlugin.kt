@@ -38,7 +38,7 @@ import kotlin.io.path.pathString
 open class FoldFailExtension {
     var enabled: Boolean = true
     var runOnCheck: Boolean = true
-    var reportFormats: List<String> = listOf("console")
+    var reportFormats: List<String> = listOf("console", "sarif")
     var outputDir: Any = "build/reports/foldfail"
     var failOn: String = "NEVER"
     var baselineFile: Any? = null
