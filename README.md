@@ -1,11 +1,11 @@
-# FoldFail — Android Adaptive Quality Auditor
+# Viewlint — Android Adaptive Quality Auditor
 
-[![FoldFail CI & Code Scanning](https://github.com/dev-vikas-soni/fold-fail/actions/workflows/foldfail.yml/badge.svg)](https://github.com/dev-vikas-soni/fold-fail/actions/workflows/foldfail.yml)
+[![Viewlint CI & Code Scanning](https://github.com/dev-vikas-soni/viewlint/actions/workflows/viewlint.yml/badge.svg)](https://github.com/dev-vikas-soni/viewlint/actions/workflows/viewlint.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**FoldFail** is an open-source static analysis tool for Android designed to identify potential application compatibility and adaptive UI risks across phones, foldables, tablets, split-screen, resizable windows, and desktop windowing environments.
+**Viewlint** is an open-source static analysis tool for Android designed to identify potential application compatibility and adaptive UI risks across phones, foldables, tablets, split-screen, resizable windows, and desktop windowing environments.
 
-*FoldFail principle: Build for the window, not just the device.*
+*Viewlint principle: Build for the window, not just the device.*
 
 ---
 
@@ -13,24 +13,24 @@
 
 Modern Android applications run across a vast array of form factors—from compact smartphones and dual-screen foldables to large tablets, desktop windowing environments, and automotive displays. Hardcoded layout assumptions, explicit orientation locks, rigid aspect-ratio constraints, and fixed Compose modifier dimensions frequently result in letterboxing, pillarboxing, clipped UI, or poor multi-window experiences.
 
-FoldFail bridges the gap between development and multi-window runtime testing by detecting these adaptive risks during static analysis before runtime deployment.
+Viewlint bridges the gap between development and multi-window runtime testing by detecting these adaptive risks during static analysis before runtime deployment.
 
 ---
 
-## What FoldFail Does & Does NOT Do
+## What Viewlint Does & Does NOT Do
 
-### What FoldFail Does
+### What Viewlint Does
 - Audits `AndroidManifest.xml` files for explicit activity orientation restrictions (FF001) and aspect-ratio constraints (FF002).
 - Audits Android XML layout resources (`res/layout*`) for fixed root widths (FF003), restrictive large fixed inner dimensions (FF004), complex layouts lacking adaptive variants (FF005), and fragile absolute positioning (FF006).
 - Audits Jetpack Compose source files (`.kt`) for hardcoded dimension modifiers (FF007), restrictive required sizes (FF008), complex composables lacking adaptive layout handling (FF009), and restrictive modifier chains (FF010).
 - Generates multi-format diagnostic reports (`CONSOLE`, `JSON`, `HTML`, `SARIF 2.1.0`).
-- Supports baseline comparisons (`foldfail-baseline.txt`) and configurable quality gates (`NEVER`, `ERROR`, `WARNING`, `NEW`).
+- Supports baseline comparisons (`viewlint-baseline.txt`) and configurable quality gates (`NEVER`, `ERROR`, `WARNING`, `NEW`).
 - Integrates natively into the Gradle verification lifecycle (`./gradlew check`) and GitHub Actions Code Scanning.
 
-### What FoldFail Does NOT Do
-- FoldFail is **not** a Google certification tool and does not prove device compatibility.
-- FoldFail does **not** perform runtime emulator measurements, ADB device inspection, or automated UI fixing.
-- FoldFail does **not** replace Android Lint, Layout Inspector, or end-to-end device testing.
+### What Viewlint Does NOT Do
+- Viewlint is **not** a Google certification tool and does not prove device compatibility.
+- Viewlint does **not** perform runtime emulator measurements, ADB device inspection, or automated UI fixing.
+- Viewlint does **not** replace Android Lint, Layout Inspector, or end-to-end device testing.
 
 ---
 
@@ -57,37 +57,37 @@ Add the plugin to your root or module `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("io.github.dev-vikas-soni.foldfail") version "0.7.0"
+    id("com.viewlint") version "0.7.1"
 }
 
-foldFail {
+viewlint {
     enabled = true
     runOnCheck = true
     reportFormats = listOf("console", "json", "html", "sarif")
-    outputDir = layout.buildDirectory.dir("reports/foldfail").get().asFile
+    outputDir = layout.buildDirectory.dir("reports/viewlint").get().asFile
     failOn = "WARNING"
-    baselineFile = file("foldfail-baseline.txt")
+    baselineFile = file("viewlint-baseline.txt")
 }
 ```
 
 ### Standalone Task Execution
 ```bash
-./gradlew foldFail
+./gradlew viewlint
 ```
 
 ### Gradle Verification Lifecycle Integration
-When `runOnCheck = true` (default), running `./gradlew check` automatically executes FoldFail audits.
+When `runOnCheck = true` (default), running `./gradlew check` automatically executes Viewlint audits.
 
 ---
 
 ## GitHub Actions Integration
 
-FoldFail outputs standard **SARIF 2.1.0** reports, which integrate natively with **GitHub Code Scanning**.
+Viewlint outputs standard **SARIF 2.1.0** reports, which integrate natively with **GitHub Code Scanning**.
 
-Create `.github/workflows/foldfail.yml`:
+Create `.github/workflows/viewlint.yml`:
 
 ```yaml
-name: FoldFail Adaptive Quality Audit
+name: Viewlint Adaptive Quality Audit
 
 on:
   push:
@@ -101,8 +101,8 @@ permissions:
   actions: read
 
 jobs:
-  foldfail-audit:
-    name: Run FoldFail Audit & Upload SARIF
+  viewlint-audit:
+    name: Run Viewlint Audit & Upload SARIF
     runs-on: ubuntu-latest
 
     steps:
@@ -110,7 +110,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -119,15 +119,15 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run FoldFail Audit
-        run: ./gradlew foldFail
+      - name: Run Viewlint Audit
+        run: ./gradlew viewlint
 
       - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: build/reports/foldfail/foldfail-report.sarif
-          category: foldfail-audit
+          sarif_file: build/reports/viewlint/viewlint-report.sarif
+          category: viewlint-audit
 ```
 
 ---

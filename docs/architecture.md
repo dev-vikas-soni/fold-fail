@@ -1,9 +1,9 @@
-# FoldFail Architecture
+# Viewlint Architecture
 
-FoldFail is structured as a modular multi-project Gradle build consisting of three primary modules:
-1. `foldfail-core`: Core data models, engine, and reporting writers.
-2. `foldfail-analyzer`: Manifest analyzer, XML layout parser & analyzers, and Kotlin/Compose source analyzers.
-3. `foldfail-gradle-plugin`: Gradle plugin extension, task implementation, manifest/layout/Kotlin discovery, and verification lifecycle integration.
+Viewlint is structured as a modular multi-project Gradle build consisting of three primary modules:
+1. `viewlint-core`: Core data models, engine, and reporting writers.
+2. `viewlint-analyzer`: Manifest analyzer, XML layout parser & analyzers, and Kotlin/Compose source analyzers.
+3. `viewlint-gradle-plugin`: Gradle plugin extension, task implementation, manifest/layout/Kotlin discovery, and verification lifecycle integration.
 
 ---
 
@@ -11,28 +11,28 @@ FoldFail is structured as a modular multi-project Gradle build consisting of thr
 
 ```mermaid
 graph TD
-    A[foldfail-gradle-plugin] --> B[foldfail-analyzer]
-    B --> C[foldfail-core]
+    A[viewlint-gradle-plugin] --> B[viewlint-analyzer]
+    B --> C[viewlint-core]
     A --> C
 ```
 
 ---
 
-## Core Architecture (`foldfail-core`)
+## Core Architecture (`viewlint-core`)
 
 ### Finding Model & Rule Abstraction
-- **`FoldFailFinding`**: Immutable data model representing a rule violation (`ruleId`, `title`, `message`, `severity`, `confidence`, `file`, `evidence`, `remediation`).
+- **`ViewlintFinding`**: Immutable data model representing a rule violation (`ruleId`, `title`, `message`, `severity`, `confidence`, `file`, `evidence`, `remediation`).
 - **`Severity`**: `INFO`, `WARNING`, `ERROR`.
 - **`Confidence`**: `LOW`, `MEDIUM`, `HIGH`.
-- **`FoldFailRule`**: Interface defining rule contract (`id`, `description`, `analyze(context)`).
+- **`ViewlintRule`**: Interface defining rule contract (`id`, `description`, `analyze(context)`).
 
 ### Analysis Context & Engine
-- **`FoldFailContext`**: Encapsulates project root (`Path`), discovered manifests (`List<Path>`), layout resources (`List<LayoutResource>`), and Kotlin source files (`List<Path>`).
-- **`FoldFailEngine`**: Executes registered rules independently, catches rule runtime exceptions to prevent silent failures, and sorts findings deterministically.
+- **`ViewlintContext`**: Encapsulates project root (`Path`), discovered manifests (`List<Path>`), layout resources (`List<LayoutResource>`), and Kotlin source files (`List<Path>`).
+- **`ViewlintEngine`**: Executes registered rules independently, catches rule runtime exceptions to prevent silent failures, and sorts findings deterministically.
 
 ---
 
-## Analyzer Architecture (`foldfail-analyzer`)
+## Analyzer Architecture (`viewlint-analyzer`)
 
 ### Manifest Analysis
 - Uses secure `DocumentBuilderFactory` settings (disabling doctype declarations and external DTDs/schemas) to parse `AndroidManifest.xml` files.
@@ -48,7 +48,7 @@ graph TD
 
 ---
 
-## Gradle Plugin & Task Execution (`foldfail-gradle-plugin`)
+## Gradle Plugin & Task Execution (`viewlint-gradle-plugin`)
 
 ### Discovery & Lifecycle Integration
 - **Discovery**: Walks project source roots to discover manifests (`AndroidManifest.xml`), layout XML files (`res/layout*`), and Kotlin source files (`.kt`), while explicitly excluding build outputs (`build`, `.gradle`, `.git`, `.idea`, `generated`).
@@ -57,5 +57,5 @@ graph TD
 
 ### Reporting & Quality Gates
 - **Reporting**: Generates multi-format reports (`CONSOLE`, `JSON`, `HTML`, `SARIF 2.1.0`).
-- **Baseline**: `FoldFailBaseline` computes stable signatures (`ruleId:file:evidence`) to track and filter known tech debt.
+- **Baseline**: `ViewlintBaseline` computes stable signatures (`ruleId:file:evidence`) to track and filter known tech debt.
 - **Quality Gates**: Enforces thresholds (`NEVER`, `ERROR`, `WARNING`, `NEW`), failing the Gradle build when exceeded after reports are fully written to disk.

@@ -1,6 +1,6 @@
-# FoldFail Roadmap
+# Viewlint Roadmap
 
-FoldFail follows a structured engineering roadmap.
+Viewlint follows a structured engineering roadmap.
 
 ---
 
@@ -12,6 +12,7 @@ FoldFail follows a structured engineering roadmap.
 - **v0.5 — Reports, Baselines & Quality Gates**: Multi-format diagnostic exporters (`CONSOLE`, `JSON`, `HTML`, `SARIF`), baseline filtering, and configurable quality gates (`NEVER`, `ERROR`, `WARNING`, `NEW`).
 - **v0.6 — GitHub Actions & SARIF Integration**: Official GitHub Actions workflow template and SARIF path normalization with partial fingerprints.
 - **v0.7 — Gradle Verification Lifecycle Integration**: Automatic `./gradlew check` integration, extension configuration, and configuration-cache compatibility.
+- **v0.7.1 — Rebrand & Self-Contained Publishing**: Complete rebrand to **Viewlint** (`com.viewlint`) and Shadow-packaged standalone plugin publishing.
 
 ---
 

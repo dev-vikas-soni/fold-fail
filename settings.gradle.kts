@@ -13,10 +13,10 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "fold-fail"
+rootProject.name = "viewlint"
 
 include(
-    ":foldfail-core",
-    ":foldfail-analyzer",
-    ":foldfail-gradle-plugin"
+    ":viewlint-core",
+    ":viewlint-analyzer",
+    ":viewlint-gradle-plugin"
 )

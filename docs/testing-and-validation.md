@@ -1,6 +1,6 @@
 # Testing & Validation Guide
 
-FoldFail is extensively tested using JUnit 4 unit tests and Gradle TestKit functional integration tests.
+Viewlint is extensively tested using JUnit 4 unit tests and Gradle TestKit functional integration tests.
 
 ---
 
@@ -16,7 +16,7 @@ FoldFail is extensively tested using JUnit 4 unit tests and Gradle TestKit funct
 - **`ReportingTest` & `SarifReportTest`**: Verifies JSON serialization, HTML generation, SARIF 2.1.0 structure, path normalization, and partial fingerprint generation.
 
 ### 3. Gradle TestKit Functional Tests
-- **`FoldFailPluginTest`**: Verifies Gradle plugin task execution, JSON/HTML/SARIF report generation, quality gate threshold enforcement, `./gradlew check` verification lifecycle integration, and configuration-cache reuse (`--configuration-cache`).
+- **`ViewlintPluginTest`**: Verifies Gradle plugin task execution, JSON/HTML/SARIF report generation, quality gate threshold enforcement, `./gradlew check` verification lifecycle integration, and configuration-cache reuse (`--configuration-cache`).
 
 ---
 

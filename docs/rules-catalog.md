@@ -1,6 +1,6 @@
-# FoldFail Rules Catalog (FF001 – FF010)
+# Viewlint Rules Catalog (FF001 – FF010)
 
-FoldFail rules are organized into three primary categories: Manifest Rules, XML Layout Rules, and Compose Rules.
+Viewlint rules are organized into three primary categories: Manifest Rules, XML Layout Rules, and Compose Rules.
 
 ---
 

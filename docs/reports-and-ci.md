@@ -1,6 +1,6 @@
 # Reports & CI Integration Guide
 
-FoldFail provides robust diagnostic export capabilities designed for local development and CI/CD pipelines.
+Viewlint provides robust diagnostic export capabilities designed for local development and CI/CD pipelines.
 
 ---
 
@@ -10,21 +10,21 @@ FoldFail provides robust diagnostic export capabilities designed for local devel
 Prints formatted finding summaries, severity levels, file paths, evidence, and remediation directly to standard output.
 
 ### 2. JSON (`json`)
-Exports structured data (`foldfail-report.json`) containing metadata, summary counters, rule distributions, and deterministically sorted findings with full JSON escaping.
+Exports structured data (`viewlint-report.json`) containing metadata, summary counters, rule distributions, and deterministically sorted findings with full JSON escaping.
 
 ### 3. HTML (`html`)
-Generates a standalone responsive HTML report (`foldfail-report.html`) featuring summary statistic cards, severity badges, and a searchable findings table with zero external JavaScript dependencies.
+Generates a standalone responsive HTML report (`viewlint-report.html`) featuring summary statistic cards, severity badges, and a searchable findings table with zero external JavaScript dependencies.
 
 ### 4. SARIF 2.1.0 (`sarif`)
-Produces a standards-compliant SARIF file (`foldfail-report.sarif`) containing driver metadata, rule definitions, relative artifact URIs, level mappings (`error`, `warning`, `note`), and `partialFingerprints` (`primaryLocationLineHash`) for stable finding identity across CI runs.
+Produces a standards-compliant SARIF file (`viewlint-report.sarif`) containing driver metadata, rule definitions, relative artifact URIs, level mappings (`error`, `warning`, `note`), and `partialFingerprints` (`primaryLocationLineHash`) for stable finding identity across CI runs.
 
 ---
 
 ## Baselines & Quality Gates
 
 ### Baselines (`baselineFile`)
-- On first run with a non-existent baseline file path, FoldFail automatically **creates** a baseline containing signatures (`ruleId:file:evidence`) of current findings.
-- On subsequent runs, FoldFail **loads** the baseline, compares current findings, and isolates **new** findings.
+- On first run with a non-existent baseline file path, Viewlint automatically **creates** a baseline containing signatures (`ruleId:file:evidence`) of current findings.
+- On subsequent runs, Viewlint **loads** the baseline, compares current findings, and isolates **new** findings.
 
 ### Quality Gates (`failOn`)
 - `NEVER`: Never fail the build.
@@ -36,11 +36,11 @@ Produces a standards-compliant SARIF file (`foldfail-report.sarif`) containing d
 
 ## GitHub Actions & Code Scanning Integration
 
-FoldFail integrates natively with GitHub Code Scanning using the official SARIF upload action.
+Viewlint integrates natively with GitHub Code Scanning using the official SARIF upload action.
 
-### Official Workflow Example (`.github/workflows/foldfail.yml`)
+### Official Workflow Example (`.github/workflows/viewlint.yml`)
 ```yaml
-name: FoldFail Adaptive Quality Audit
+name: Viewlint Adaptive Quality Audit
 
 on:
   push:
@@ -54,8 +54,8 @@ permissions:
   actions: read
 
 jobs:
-  foldfail-audit:
-    name: Run FoldFail Audit & Upload SARIF
+  viewlint-audit:
+    name: Run Viewlint Audit & Upload SARIF
     runs-on: ubuntu-latest
 
     steps:
@@ -63,7 +63,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -72,15 +72,15 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run FoldFail Audit
-        run: ./gradlew foldFail
+      - name: Run Viewlint Audit
+        run: ./gradlew viewlint
 
       - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: build/reports/foldfail/foldfail-report.sarif
-          category: foldfail-audit
+          sarif_file: build/reports/viewlint/viewlint-report.sarif
+          category: viewlint-audit
 ```
 
 ### Required Permissions & Limitations

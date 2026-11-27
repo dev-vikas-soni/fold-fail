@@ -1,6 +1,6 @@
-# Contributing to FoldFail
+# Contributing to Viewlint
 
-Thank you for your interest in contributing to FoldFail!
+Thank you for your interest in contributing to Viewlint!
 
 ## Development Environment Setup
 - **Java Development Kit**: JDK 21 or JDK 25.
@@ -13,9 +13,9 @@ To build the project and execute all unit and functional tests:
 ```
 
 ## Module Responsibilities
-- `:foldfail-core`: Data models (`FoldFailFinding`, `Severity`, `Confidence`), engine (`FoldFailEngine`), context (`FoldFailContext`), and reporting writers (`JsonReportWriter`, `HtmlReportWriter`, `SarifReportWriter`, `FoldFailBaseline`).
-- `:foldfail-analyzer`: Manifest analyzer, XML layout parser & analyzers, and Compose analyzers/parsers.
-- `:foldfail-gradle-plugin`: Gradle extension, task implementation, resource discovery, and lifecycle integration.
+- `:viewlint-core`: Data models (`ViewlintFinding`, `Severity`, `Confidence`), engine (`ViewlintEngine`), context (`ViewlintContext`), and reporting writers (`JsonReportWriter`, `HtmlReportWriter`, `SarifReportWriter`, `ViewlintBaseline`).
+- `:viewlint-analyzer`: Manifest analyzer, XML layout parser & analyzers, and Compose analyzers/parsers.
+- `:viewlint-gradle-plugin`: Gradle extension, task implementation, resource discovery, and lifecycle integration.
 
 ## Pull Request Checklist
 1. Verify that all tests pass (`./gradlew clean test build`).

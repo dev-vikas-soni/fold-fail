@@ -1,19 +1,24 @@
-# FoldFail Changelog
+# Viewlint Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.1] — Rebrand to Viewlint & Self-Contained Publishing
+- Fully rebranded from FoldFail to **Viewlint** (`com.viewlint` Gradle plugin ID, `com.viewlint` package namespace, `viewlint` task).
+- Implemented self-contained plugin artifact packaging with Gradle Shadow plugin (`com.gradleup.shadow`), bundling core, analyzer, and Kotlin compiler embeddable dependencies.
+- Updated all documentation, workflows, and test suites.
+
 ## [0.7.0] — Gradle Verification Lifecycle Integration
 - Added automatic integration with `./gradlew check` verification lifecycle.
-- Extended `FoldFailExtension` with `enabled` and `runOnCheck` configuration options.
-- Refactored `FoldFailTask` to use modern Gradle lazy property APIs (`ListProperty`, `DirectoryProperty`, `RegularFileProperty`), achieving full configuration-cache compatibility.
+- Extended `ViewlintExtension` with `enabled` and `runOnCheck` configuration options.
+- Refactored `ViewlintTask` to use modern Gradle lazy property APIs (`ListProperty`, `DirectoryProperty`, `RegularFileProperty`), achieving full configuration-cache compatibility.
 
 ## [0.6.0] — GitHub Actions & SARIF Integration
 - Enhanced `SarifReportWriter` with repository-relative path normalization and `partialFingerprints` (`primaryLocationLineHash`) for stable finding identity across CI runs.
-- Created official GitHub Actions workflow template (`.github/workflows/foldfail.yml`) for Code Scanning upload using `github/codeql-action/upload-sarif@v3`.
+- Created official GitHub Actions workflow template (`.github/workflows/viewlint.yml`) for Code Scanning upload using `github/codeql-action/upload-sarif@v4`.
 
 ## [0.5.0] — Diagnostic Export & CI Reporting
 - Introduced reporting package with multi-format exporters: Console, JSON, HTML, and SARIF 2.1.0.
-- Implemented baseline creation, loading, and signature filtering (`FoldFailBaseline`).
+- Implemented baseline creation, loading, and signature filtering (`ViewlintBaseline`).
 - Implemented configurable quality gates (`NEVER`, `ERROR`, `WARNING`, `NEW`).
 
 ## [0.4.0] — Compose UI & Modifier Static Analysis
@@ -31,5 +36,5 @@ All notable changes to this project will be documented in this file.
 - Added Gradle TestKit functional plugin tests.
 
 ## [0.1.0] — Core Foundation
-- Initial core architecture (`FoldFailFinding`, `Severity`, `Confidence`, `FoldFailRule`, `FoldFailContext`, `FoldFailEngine`, `FoldFailRuleRegistry`).
+- Initial core architecture (`ViewlintFinding`, `Severity`, `Confidence`, `ViewlintRule`, `ViewlintContext`, `ViewlintEngine`, `ViewlintRuleRegistry`).
 - Basic Gradle plugin and task structure.
