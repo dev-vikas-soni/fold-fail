@@ -25,25 +25,43 @@ class HardcodedDimensionAnalyzer : ViewlintRule {
                 for (comp in parsed.composables) {
                     if (comp.hasAdaptiveCues) continue
 
+                    // Do not flag input surfaces (e.g. OTP text field cells) or pure leaf graphics without variable text
+                    if (comp.isInputSurface) continue
+                    if (comp.isLeafOrSmallComponent && !comp.hasTextContent) continue
+
+                    // Internal scrolling mitigates fixed container height/width restriction
+                    if (comp.hasInternalScroll) continue
+
+                    // Check if both width and height are fixed and will be reported by FF010
+                    val fixedWidthCall = comp.modifierCalls.find { it.contains("width(") && it.contains("dp") && !it.contains("widthIn") && !it.contains("required") }
+                    val fixedHeightCall = comp.modifierCalls.find { it.contains("height(") && it.contains("dp") && !it.contains("heightIn") && !it.contains("required") }
+                    val fixedSizeCall = comp.modifierCalls.find { it.contains("size(") && it.contains("dp") && !it.contains("sizeIn") && !it.contains("required") }
+
+                    val isLockedBothAxes = (fixedWidthCall != null && fixedHeightCall != null) || fixedSizeCall != null
+                    if (isLockedBothAxes) {
+                        // Suppress FF007 in favor of FF010 to avoid redundant duplicate reporting on the exact same composable
+                        continue
+                    }
+
                     val reportedCallsInComposable = mutableSetOf<String>()
 
                     for (call in comp.modifierCalls) {
                         if (!call.contains("dp") || call.contains("required")) continue
 
                         // Check dimension modifiers: width, height, size
-                        val isDimensionCall = call.contains("width") || call.contains("height") || call.contains("size")
+                        val isDimensionCall = call.startsWith("width(") || call.startsWith("height(") || call.startsWith("size(")
                         if (!isDimensionCall) continue
 
-                        // Do not treat flexible range modifiers (widthIn / heightIn) as rigid fixed-width/height content containers
-                        if (call.contains("widthIn") || call.contains("heightIn")) continue
+                        // Do not treat flexible range modifiers (widthIn / heightIn / sizeIn) as rigid fixed dimensions
+                        if (call.contains("widthIn") || call.contains("heightIn") || call.contains("sizeIn")) continue
 
                         val dpValue = parseDpValue(call) ?: continue
 
-                        // Thresholds & Role Exclusions:
-                        // - Dimensions <= 48dp are standard touch targets, icons, avatars, badges, or spacers.
-                        // - Dimensions <= 64dp on leaf / small components are standard visual design specs.
+                        // Exclude touch targets, icons, badges, spacers (<= 48dp)
                         if (dpValue <= 48.0) continue
-                        if (dpValue <= 64.0 && comp.isLeafOrSmallComponent) continue
+
+                        // Exclude small visual elements (<= 64dp) without dynamic text
+                        if (dpValue <= 64.0 && !comp.hasTextContent) continue
 
                         // Deduplicate identical call line within the same composable
                         if (!reportedCallsInComposable.add(call)) continue
@@ -82,7 +100,7 @@ class HardcodedDimensionAnalyzer : ViewlintRule {
     }
 
     private fun parseDpValue(call: String): Double? {
-        val match = Regex("(?:width|height|size|widthIn|heightIn)\\s*\\(\\s*([0-9]+(?:\\.[0-9]+)?)\\s*\\.\\s*dp").find(call)
+        val match = Regex("(?:width|height|size)\\s*\\(\\s*([0-9]+(?:\\.[0-9]+)?)\\s*\\.\\s*dp").find(call)
             ?: Regex("(?:width|height|size|max)\\s*=\\s*([0-9]+(?:\\.[0-9]+)?)\\s*\\.\\s*dp").find(call)
             ?: Regex("([0-9]+(?:\\.[0-9]+)?)\\s*\\.\\s*dp").find(call)
         return match?.groupValues?.get(1)?.toDoubleOrNull()

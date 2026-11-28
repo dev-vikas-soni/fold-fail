@@ -32,6 +32,7 @@ import org.gradle.work.DisableCachingByDefault
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import java.util.Comparator
 import kotlin.io.path.isRegularFile
@@ -79,7 +80,7 @@ abstract class ViewlintTask : DefaultTask() {
         val layouts = discoverLayouts(root)
         val kotlinSources = discoverKotlinSources(root)
 
-        val findings = ViewlintEngine(
+        val rawFindings = ViewlintEngine(
             rules = ViewlintRuleRegistry.defaultRules()
         ).analyze(
             ViewlintContext(
@@ -89,6 +90,21 @@ abstract class ViewlintTask : DefaultTask() {
                 kotlinSources = kotlinSources
             )
         )
+
+        // Normalize paths relative to project root for portable baseline signatures and CI reports
+        val findings = rawFindings.map { finding ->
+            val relativePath = try {
+                val path = Paths.get(finding.file)
+                if (path.isAbsolute && path.startsWith(root)) {
+                    root.relativize(path).toString().replace('\\', '/')
+                } else {
+                    finding.file.replace('\\', '/')
+                }
+            } catch (_: Exception) {
+                finding.file.replace('\\', '/')
+            }
+            finding.copy(file = relativePath)
+        }
 
         // Handle Console Output
         if (formats.any { it.equals("console", ignoreCase = true) }) {

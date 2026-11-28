@@ -37,7 +37,7 @@ class MissingAdaptiveHandlingAnalyzer : ViewlintRule {
                     if (hasMultipleModifiers || isSubstantialContainer) {
                         val remediation = when {
                             comp.text.lowercase().contains("lazyverticalgrid") || comp.text.lowercase().contains("grid") ->
-                                "Consider using AdaptiveGrid or FlowRow to automatically adjust column counts across phone, foldable, and tablet displays."
+                                "Consider using GridCells.Adaptive or FlowRow to automatically adjust column counts across phone, foldable, and tablet displays."
                             comp.name.lowercase().contains("screen") || comp.name.lowercase().contains("dashboard") ->
                                 "Incorporate WindowSizeClass or calculateWindowSizeClass() to switch between single-pane and multi-pane (or NavigationRail) layouts on expanded windows."
                             else ->

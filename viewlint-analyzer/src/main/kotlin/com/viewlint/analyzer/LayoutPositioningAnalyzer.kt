@@ -44,7 +44,7 @@ class LayoutPositioningAnalyzer : ViewlintRule {
                     remediation = "Replace AbsoluteLayout with ConstraintLayout, RelativeLayout, or FrameLayout with responsive constraints."
                 )
             )
-        } else if (node.attributes.containsKey("layout_x") || node.attributes.containsKey("layout_y")) {
+        } else if (node.attributes.keys.any { it.endsWith("layout_x") || it.endsWith("layout_y") }) {
             findings.add(
                 ViewlintFinding(
                     ruleId = id,

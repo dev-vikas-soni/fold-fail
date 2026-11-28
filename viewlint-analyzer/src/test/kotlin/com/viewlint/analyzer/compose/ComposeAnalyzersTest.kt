@@ -273,4 +273,154 @@ class ComposeAnalyzersTest {
             dir.deleteRecursively()
         }
     }
+
+    @Test
+    fun `FF010 ignores OtpTextField leaf input controls`() {
+        val dir = Files.createTempDirectory("viewlint-otp-test").toFile()
+        val ktFile = File(dir, "src/main/java/com/example/OtpTextField.kt")
+        ktFile.parentFile.mkdirs()
+        ktFile.writeText(
+            """
+            package com.example
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.unit.dp
+
+            @Composable
+            fun OtpTextField() {
+                Row {
+                    Box(modifier = Modifier.width(16.dp).height(52.dp))
+                }
+            }
+            """.trimIndent()
+        )
+
+        try {
+            val context = ViewlintContext(
+                projectRoot = dir.toPath(),
+                manifests = emptyList(),
+                kotlinSources = listOf(ktFile.toPath())
+            )
+
+            val findings = RestrictiveModifierChainsAnalyzer().analyze(context)
+            assertTrue("Expected no FF010 findings for OtpTextField character cell", findings.isEmpty())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `FF007 ignores list items inside scrollable containers`() {
+        val dir = Files.createTempDirectory("viewlint-scroll-item-test").toFile()
+        val ktFile = File(dir, "src/main/java/com/example/BannerAdminCard.kt")
+        ktFile.parentFile.mkdirs()
+        ktFile.writeText(
+            """
+            package com.example
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.unit.dp
+
+            @Composable
+            fun BannerAdminListScreen() {
+                LazyColumn {
+                    items(10) {
+                        Card(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                            Text("Banner Item")
+                        }
+                    }
+                }
+            }
+            """.trimIndent()
+        )
+
+        try {
+            val context = ViewlintContext(
+                projectRoot = dir.toPath(),
+                manifests = emptyList(),
+                kotlinSources = listOf(ktFile.toPath())
+            )
+
+            val findings = HardcodedDimensionAnalyzer().analyze(context)
+            assertTrue("Expected no FF007 findings for Card inside LazyColumn list", findings.isEmpty())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `FF009 recognizes GridCells Adaptive as valid adaptive cues`() {
+        val dir = Files.createTempDirectory("viewlint-grid-adaptive-test").toFile()
+        val ktFile = File(dir, "src/main/java/com/example/ProductGridScreen.kt")
+        ktFile.parentFile.mkdirs()
+        ktFile.writeText(
+            """
+            package com.example
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.unit.dp
+
+            @Composable
+            fun ProductGridScreen() {
+                LazyVerticalGrid(columns = GridCells.Adaptive(minSize = 160.dp)) {
+                    items(20) {
+                        Text("Product Item")
+                    }
+                }
+            }
+            """.trimIndent()
+        )
+
+        try {
+            val context = ViewlintContext(
+                projectRoot = dir.toPath(),
+                manifests = emptyList(),
+                kotlinSources = listOf(ktFile.toPath())
+            )
+
+            val findings = MissingAdaptiveHandlingAnalyzer().analyze(context)
+            assertTrue("Expected no FF009 findings for screen using GridCells.Adaptive", findings.isEmpty())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `FF007 suppresses duplicate report when FF010 triggers on dual-axis container`() {
+        val dir = Files.createTempDirectory("viewlint-dedup-test").toFile()
+        val ktFile = File(dir, "src/main/java/com/example/DualAxisCard.kt")
+        ktFile.parentFile.mkdirs()
+        ktFile.writeText(
+            """
+            package com.example
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.unit.dp
+
+            @Composable
+            fun DualAxisContentCard() {
+                Column(modifier = Modifier.width(300.dp).height(400.dp)) {
+                    Text("Dual Axis Card")
+                }
+            }
+            """.trimIndent()
+        )
+
+        try {
+            val context = ViewlintContext(
+                projectRoot = dir.toPath(),
+                manifests = emptyList(),
+                kotlinSources = listOf(ktFile.toPath())
+            )
+
+            val ff007Findings = HardcodedDimensionAnalyzer().analyze(context)
+            val ff010Findings = RestrictiveModifierChainsAnalyzer().analyze(context)
+
+            assertEquals(1, ff010Findings.size)
+            assertEquals("FF010", ff010Findings.first().ruleId)
+            assertTrue("FF007 should be suppressed in favor of FF010 for dual-axis locked container", ff007Findings.isEmpty())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
 }
