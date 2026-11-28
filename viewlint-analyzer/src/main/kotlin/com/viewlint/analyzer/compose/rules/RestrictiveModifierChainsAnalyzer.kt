@@ -1,5 +1,6 @@
 package com.viewlint.analyzer.compose.rules
 
+import com.viewlint.analyzer.compose.ComponentRole
 import com.viewlint.analyzer.compose.ComposeSourceParser
 import com.viewlint.core.Confidence
 import com.viewlint.core.Severity
@@ -25,38 +26,50 @@ class RestrictiveModifierChainsAnalyzer : ViewlintRule {
                 for (comp in parsed.composables) {
                     if (comp.hasAdaptiveCues) continue
 
-                    // Ignore input surfaces (OTP text field cells, text inputs) and leaf graphics without dynamic text
-                    if (comp.isInputSurface) continue
-                    if (comp.isLeafOrSmallComponent && !comp.hasTextContent) continue
+                    if (comp.role == ComponentRole.INPUT_SURFACE) continue
+                    if (comp.role == ComponentRole.LEAF_OR_SMALL && !comp.hasTextContent) continue
 
-                    // Ignore items with internal scroll state as internal content can scroll
-                    if (comp.hasInternalScroll) continue
+                    for (chain in comp.modifierChains) {
+                        val isChainScrollMitigated = chain.hasScrollModifier || isInherentlyScrollablePrimitive(chain.targetPrimitive)
+                        if (isChainScrollMitigated) continue
 
-                    val fixedWidthCall = comp.modifierCalls.find { it.contains("width(") && it.contains("dp") && !it.contains("widthIn") && !it.contains("required") }
-                    val fixedHeightCall = comp.modifierCalls.find { it.contains("height(") && it.contains("dp") && !it.contains("heightIn") && !it.contains("required") }
-                    val fixedSizeCall = comp.modifierCalls.find { it.contains("size(") && it.contains("dp") && !it.contains("sizeIn") && !it.contains("required") }
+                        val fixedWidthCall = chain.calls.find { it.contains("width(") && it.contains("dp") && !it.contains("widthIn") && !it.contains("required") }
+                        val fixedHeightCall = chain.calls.find { it.contains("height(") && it.contains("dp") && !it.contains("heightIn") && !it.contains("required") }
+                        val fixedSizeCall = chain.calls.find { it.contains("size(") && it.contains("dp") && !it.contains("sizeIn") && !it.contains("required") }
 
-                    val isLockedBothAxes = (fixedWidthCall != null && fixedHeightCall != null) || fixedSizeCall != null
+                        val isLockedBothAxes = (fixedWidthCall != null && fixedHeightCall != null) || fixedSizeCall != null
 
-                    if (isLockedBothAxes) {
-                        val evidence = listOfNotNull(fixedWidthCall, fixedHeightCall, fixedSizeCall).joinToString(", ")
-                        val confidence = if (comp.isScreenOrContainer) Confidence.HIGH else Confidence.MEDIUM
+                        if (isLockedBothAxes) {
+                            val evidence = listOfNotNull(fixedWidthCall, fixedHeightCall, fixedSizeCall).joinToString(", ")
+                            val confidence = when {
+                                comp.role == ComponentRole.SCREEN_OR_CONTAINER -> Confidence.HIGH
+                                comp.role == ComponentRole.UNKNOWN -> Confidence.MEDIUM
+                                else -> Confidence.LOW
+                            }
 
-                        add(
-                            ViewlintFinding(
-                                ruleId = id,
-                                title = "Restrictive modifier chain combination",
-                                message = "Composable '${comp.name}' combines fixed width and height or fixed size modifiers ($evidence), locking component boundaries in both horizontal and vertical axes.",
-                                severity = Severity.WARNING,
-                                confidence = confidence,
-                                file = sourcePath.toString(),
-                                evidence = evidence,
-                                remediation = "Avoid locking both width and height to fixed dp values on content containers. Use weight, fillMaxSize, or responsive sizing constraints."
+                            add(
+                                ViewlintFinding(
+                                    ruleId = id,
+                                    title = "Restrictive modifier chain combination",
+                                    message = "Composable '${comp.name}' combines fixed width and height or fixed size modifiers ($evidence), locking component boundaries in both horizontal and vertical axes.",
+                                    severity = Severity.WARNING,
+                                    confidence = confidence,
+                                    file = sourcePath.toString(),
+                                    evidence = evidence,
+                                    remediation = "Avoid locking both width and height to fixed dp values on content containers. Use weight, fillMaxSize, or responsive sizing constraints.",
+                                    line = comp.line
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
         }
+    }
+
+    private fun isInherentlyScrollablePrimitive(primitive: String?): Boolean {
+        if (primitive == null) return false
+        val p = primitive.lowercase()
+        return p == "lazycolumn" || p == "lazyrow" || p == "lazyverticalgrid" || p == "lazyhorizontalgrid"
     }
 }

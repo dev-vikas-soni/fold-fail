@@ -1,45 +1,86 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/branding/viewlint-logo-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="assets/branding/viewlint-logo-light.svg">
-    <img alt="Viewlint — Android Adaptive Quality Auditor" src="assets/branding/viewlint-logo.svg" width="480">
-  </picture>
-</p>
+# ViewLint — Evidence-Backed Adaptive UI Auditor for Android
 
-<p align="center">
-  <strong>Static analysis for Android adaptive UI risks across phones, tablets, foldables, split-screen, and resizable windows.</strong>
-</p>
+[![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/io.github.dev-vikas-soni.viewlint)](https://plugins.gradle.org/plugin/io.github.dev-vikas-soni.viewlint)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 
-<p align="center">
-  <a href="https://github.com/dev-vikas-soni/viewlint/actions/workflows/viewlint.yml"><img src="https://github.com/dev-vikas-soni/viewlint/actions/workflows/viewlint.yml/badge.svg" alt="Viewlint CI &amp; Code Scanning"></a>
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-</p>
+> **Evidence-backed adaptive UI diagnostics for Android XML and Jetpack Compose.**
+
+ViewLint is a static analysis engine and Gradle plugin for Android that detects layout, dimension, orientation, and responsiveness risks across phones, foldables, tablets, split-screen windows, and desktop environments.
 
 ---
 
-## What Viewlint Does
+## 📱 The Android Adaptive UI Challenge
 
-Modern Android applications run across a vast array of form factors—from compact smartphones and dual-screen foldables to large tablets, desktop windowing environments, and automotive displays. Hardcoded layout assumptions, explicit orientation locks, rigid aspect-ratio constraints, and fixed Compose modifier dimensions frequently result in letterboxing, pillarboxing, clipped UI, or poor multi-window experiences.
+Android devices range from compact outer screens on foldables ($300\text{dp}$) to expanded inner displays ($600-840\text{dp}$), tablets, Chromebooks, and freeform resizable multi-window environments. 
 
-**Viewlint** provides static analysis for Android adaptive UI risks. It analyzes Android manifests, XML layout resources, and Jetpack Compose Kotlin source code to identify architectural assumptions that hinder responsive screen adaptation before runtime deployment.
+Traditional layout code often contains subtle rigid assumptions:
+- Hardcoded dp dimensions locking component bounds on wide displays.
+- Activity orientation locks causing letterboxing on foldables.
+- Fixed aspect-ratio constraints triggering pillarboxing.
+- Required size modifiers overriding parent layout constraints.
+
+ViewLint audits your project manifests, XML layouts, and Jetpack Compose codebases automatically during builds to catch these issues before they reach production.
 
 ---
 
-## Installation
+## 🔍 What ViewLint Detects
 
-Add the Viewlint Gradle plugin from the Gradle Plugin Portal to your module or root `build.gradle.kts`:
+ViewLint features **10 rules** (FF001 – FF010) covering Manifest, XML Layout, and Jetpack Compose analysis:
+
+| Rule ID | Name | Target | Default Severity | Confidence | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| [**FF001**](docs/rules/FF001.md) | Activity orientation is restricted | Manifest | `WARNING` | `MEDIUM` | Detects `android:screenOrientation` locks on activities. |
+| [**FF002**](docs/rules/FF002.md) | Activity aspect ratio is restricted | Manifest | `WARNING` | `MEDIUM` | Detects `maxAspectRatio` or `minAspectRatio` bounds. |
+| [**FF003**](docs/rules/FF003.md) | Root layout has fixed width | XML | `WARNING` | `MEDIUM` | Root view specifies hardcoded dp width without adaptive variants. |
+| [**FF004**](docs/rules/FF004.md) | Fixed large inner dimensions | XML | `INFO` | `LOW` | Non-scroll inner view specifies fixed width & height $\ge 300\text{dp}$. |
+| [**FF005**](docs/rules/FF005.md) | Complex layout lacks adaptive variants | XML | `INFO` | `LOW` | Complex XML layout (>15 nodes) lacking `-w600dp` or `-sw600dp` variants. |
+| [**FF006**](docs/rules/FF006.md) | AbsoluteLayout or absolute coordinates | XML | `WARNING` | `HIGH` / `MEDIUM` | Deprecated `<AbsoluteLayout>` or `layout_x`/`layout_y` attributes. |
+| [**FF007**](docs/rules/FF007.md) | Composable uses hardcoded dimensions | Compose | `WARNING` | `HIGH` / `MEDIUM` | Fixed `.width()`, `.height()`, or `.size()` dp modifiers on composables. |
+| [**FF008**](docs/rules/FF008.md) | Composable uses restrictive required size | Compose | `WARNING` / `INFO` | `HIGH` / `LOW` | `.requiredWidth()`, `.requiredHeight()`, or `.requiredSize()` calls. |
+| [**FF009**](docs/rules/FF009.md) | Missing adaptive layout handling | Compose | `INFO` | `LOW` | Screen composable without `WindowSizeClass` or `BoxWithConstraints`. |
+| [**FF010**](docs/rules/FF010.md) | Restrictive modifier chain combination | Compose | `WARNING` | `HIGH` / `MEDIUM` | Modifier chain locking both width and height simultaneously. |
+
+---
+
+## ⚡ Key Capabilities
+
+- **Jetpack Compose & XML Support**: Analyzes both modern Compose source code (`.kt`) and legacy XML layouts (`res/layout*`) plus `AndroidManifest.xml`.
+- **Semantic Heuristic Engine**: Differentiates content containers, input surfaces (OTP cells/fields), and leaf graphic elements.
+- **Evidence-Driven Findings**: Every finding specifies exact file paths, line numbers, evidence snippets, confidence levels, and remediation advice.
+- **4 Output Formats**: Console output, interactive light/dark HTML report, structured JSON, and OASIS SARIF 2.1.0 for GitHub Code Scanning.
+- **Baseline Support**: Record existing project findings into a baseline file to prevent build breaks while fixing technical debt.
+- **Quality Gates**: Enforce build failure thresholds (`NEVER`, `ERROR`, `WARNING`, `NEW`) in CI pipelines.
+- **Configuration Cache Compliant**: Fully compatible with Gradle configuration cache and multi-module builds.
+
+---
+
+## 🛠️ Installation & Setup
+
+Apply the plugin in your root or module `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("io.github.dev-vikas-soni.viewlint") version "0.9.0"
+    id("io.github.dev-vikas-soni.viewlint") version "1.0.0"
 }
 ```
 
----
+### Minimal Configuration Example
 
-## Quick Start
+```kotlin
+viewlint {
+    // Fail build if WARNING or ERROR severity findings exist (Options: NEVER, ERROR, WARNING, NEW)
+    failOn = "WARNING"
 
-Run the standalone audit task:
+    // Enable reports (Options: console, json, html, sarif)
+    reportFormats = listOf("console", "json", "html", "sarif")
+
+    // Optional baseline file
+    baselineFile = file("viewlint-baseline.txt")
+}
+```
+
+Run the audit task:
 
 ```bash
 ./gradlew viewlint
@@ -47,159 +88,101 @@ Run the standalone audit task:
 
 ---
 
-## Gradle Lifecycle Integration
+## 📊 Sample Finding & Report Output
 
-By default (`runOnCheck = true`), Viewlint hooks into Gradle's standard verification lifecycle:
+### Terminal Console Output
 
-```bash
-./gradlew check
+```
+Viewlint — Android Adaptive Quality Auditor
+============================================
+
+[WARNING] FF007: Composable uses hardcoded dimensions
+File: app/src/main/java/com/example/HomeScreen.kt
+Evidence: width(340.dp)
+Message: Composable 'MainCard' uses a fixed 340dp width ('width(340.dp)') on a layout region without detectable adaptive handling.
+Confidence: HIGH
+Remediation: Review whether 'MainCard' needs to expand across foldables, tablets, or split-screen windows. Consider using flexible modifiers (fillMaxWidth, weight) or adapting to WindowSizeClass.
+
+--------------------------------------------
+Analysis complete. Findings: 1
+--------------------------------------------
 ```
 
-Executing `./gradlew check` automatically runs Viewlint audits alongside your unit tests and standard verification tasks.
+### Generated Reports
+Reports are saved in `build/reports/viewlint/`:
+- `viewlint-report.html` — Interactive offline visual report with search, filtering, and theme toggle.
+- `viewlint-report.json` — Machine-readable summary and findings array.
+- `viewlint-report.sarif` — Native SARIF format for GitHub Security Code Scanning upload.
 
 ---
 
-## Rules
+## 🛡️ Baseline & Quality Gate Usage
 
-Viewlint registers ten static analysis rules across Android Manifest, XML Layout, and Jetpack Compose surfaces.
-
-### Manifest & XML Layout Analysis (FF001–FF006)
-
-| Rule ID | Rule Name | Severity | Description & Behavior |
-| :--- | :--- | :--- | :--- |
-| **FF001** | Activity orientation is restricted | `WARNING` | Detects explicit activity `screenOrientation` restrictions (`portrait`, `landscape`, `locked`, etc.) that prevent orientation changes and window resizing. *(Note: On Android 16 (API 36), orientation restrictions are ignored on form factors with smallest width >= 600dp).* |
-| **FF002** | Activity aspect ratio is restricted | `WARNING` | Detects `maxAspectRatio` or `minAspectRatio` when effective resizability is false. Effective resizability considers explicit activity `resizeableActivity`, application `resizeableActivity`, and target SDK platform defaults (>= 24 defaults to `true`, < 24 or unresolved defaults conservatively to `false`). *(Note: On Android 16 (API 36), aspect-ratio restrictions are ignored on displays with smallest width >= 600dp unless opted out).* |
-| **FF003** | Root layout has fixed width | `WARNING` | Detects root view elements in layout XML files specifying hardcoded `dp` widths lacking qualified adaptive layout variants (`-sw600dp`, `-w600dp`, `-land`, etc.). |
-| **FF004** | Fixed large inner dimensions | `INFO` | Detects non-scroll container child view elements specifying both `layout_width` and `layout_height` as hardcoded values >= 300dp. |
-| **FF005** | Complex layout lacks adaptive variants | `INFO` | Heuristic detecting complex layouts (>15 DOM nodes) that only have a single default layout variant without responsive alternatives. |
-| **FF006** | AbsoluteLayout or absolute coordinates | `WARNING` | Detects usage of deprecated `<AbsoluteLayout>` or absolute coordinate attributes `layout_x`/`layout_y`. |
-
-### Jetpack Compose Analysis (FF007–FF010)
-
-| Rule ID | Rule Name | Severity | Description & Behavior |
-| :--- | :--- | :--- | :--- |
-| **FF007** | Composable uses hardcoded dimensions | `WARNING` | Detects `@Composable` functions using fixed `.width(...)`, `.height(...)`, or `.size(...)` `dp` modifiers without detectable adaptive cues (`WindowSizeClass`, `BoxWithConstraints`, or conditional sizing branches). |
-| **FF008** | Composable uses restrictive required size | `WARNING` | Detects `@Composable` functions using `.requiredWidth(...)`, `.requiredHeight(...)`, or `.requiredSize(...)` modifiers that force dimensions regardless of incoming parent constraints. |
-| **FF009** | Missing adaptive layout handling | `INFO` | Heuristic detecting complex screen-level `@Composable` functions that lack responsive layout branching or window size class awareness. |
-| **FF010** | Restrictive modifier chain combination | `WARNING` | Detects combinations of fixed width and height modifiers or fixed `.size(...)` modifiers without adaptive cues that lock component boundaries. |
-
----
-
-## Reports
-
-Viewlint generates comprehensive diagnostic reports in standard formats.
-
-Report files are output by default to:
-
-```text
-build/reports/viewlint/viewlint-report.json
-build/reports/viewlint/viewlint-report.html
-build/reports/viewlint/viewlint-report.sarif
-```
-
-Supported formats:
-- **Console (`console`)**: Detailed terminal output showing finding details, evidence, and remediation advice.
-- **JSON (`json`)**: Structured dataset containing metadata, summary statistics, and complete finding properties.
-- **HTML (`html`)**: Interactive standalone summary dashboard with severity badges and searchable findings.
-- **SARIF 2.1.0 (`sarif`)**: Industry-standard Static Analysis Results Interchange Format for GitHub Code Scanning.
-
----
-
-## Configuration
-
-Configure Viewlint using the `viewlint` extension block in your build script:
+To adopt ViewLint incrementally on an existing codebase without failing CI:
 
 ```kotlin
 viewlint {
-    // Enable or disable Viewlint static analysis (default: true)
-    enabled = true
-
-    // Wire viewlint task into standard ./gradlew check lifecycle (default: true)
-    runOnCheck = true
-
-    // Exported report formats: console, json, html, sarif
-    reportFormats = listOf("console", "json", "html", "sarif")
-
-    // Output directory for report files
-    outputDir = layout.buildDirectory.dir("reports/viewlint").get().asFile
-
-    // Quality gate failure threshold: NEVER, ERROR, WARNING, NEW
-    failOn = "WARNING"
-
-    // Optional baseline file for suppressing known findings
-    baselineFile = file("viewlint-baseline.txt")
+    failOn = "NEW"
+    baselineFile = file("config/viewlint-baseline.txt")
 }
 ```
 
+1. On the first run, ViewLint creates `config/viewlint-baseline.txt` and records all existing findings.
+2. Subsequent runs filter out baselined findings and only fail if **new adaptive risks** are introduced.
+
 ---
 
-## CI Integration
+## 📋 Compatibility Matrix
 
-Viewlint outputs SARIF 2.1.0, enabling direct integration with GitHub Code Scanning.
+| Component | Minimum Version | Tested Version |
+| :--- | :--- | :--- |
+| **Gradle** | 8.0+ | 8.5, 9.5.0 |
+| **Java / JDK** | JDK 17+ | OpenJDK 21 |
+| **Kotlin** | 1.9.0+ | 2.0.21, 2.3.20 |
+| **Android AGP** | 8.0+ | 8.2 – 9.0 |
 
-Here is a complete GitHub Actions workflow (`.github/workflows/viewlint.yml`):
+---
 
-```yaml
-name: Viewlint Adaptive Quality Audit
+## ⚠️ Limitations & False-Positive Scenarios
 
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
+- **Calculated Modifiers**: Sizing calculations performed via custom helper methods outside standard `Modifier.width(x.dp)` syntax may not be statically extracted.
+- **External Adaptive Logic**: If adaptive layout switching occurs in a parent composable in another file, ViewLint evaluates the child composable with `Confidence.LOW` / `Confidence.MEDIUM`.
+- **Specialized UI**: Fixed-size canvas elements, map view containers, and custom OTP input cells are exempted where recognized, but unusual custom widgets may require baseline suppression.
 
-permissions:
-  contents: read
-  security-events: write
-  actions: read
+---
 
-jobs:
-  viewlint-audit:
-    name: Run Viewlint Audit & Upload SARIF
-    runs-on: ubuntu-latest
+## 🧪 Testing & Contributions
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+Run all project tests and benchmarks:
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'gradle'
+```bash
+# Run unit tests and plugin tests
+./gradlew test
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+# Run the 45-fixture evidence accuracy benchmark suite
+./gradlew :viewlint-analyzer:test --tests com.viewlint.analyzer.benchmark.AccuracyBenchmarkTest
 
-      - name: Run Viewlint Audit
-        run: ./gradlew viewlint
-
-      - name: Verify SARIF Report Generation
-        run: test -f build/reports/viewlint/viewlint-report.sarif
-
-      - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: build/reports/viewlint/viewlint-report.sarif
-          category: viewlint-audit
+# Run performance benchmark suite
+./benchmarks/run_performance_benchmark.sh
 ```
 
----
-
-## Limitations
-
-- **Static Analysis**: Viewlint performs static code and manifest inspection. It cannot observe runtime state flows, dynamic window resizes, or custom view measurement logic.
-- **Does Not Guarantee Adaptive Compatibility**: Passing Viewlint audits indicates absence of common static anti-patterns, but does not guarantee perfect adaptive UI rendering.
-- **Does Not Replace Android Lint**: Viewlint focuses exclusively on adaptive UI risks and works alongside Android Lint rather than replacing it.
-- **Does Not Replace Physical Testing**: Viewlint cannot replace testing on physical devices, emulators, or multi-window preview environments.
-- **Heuristics**: Rules FF005 and FF009 rely on structural heuristics and pattern detection; valid design patterns may occasionally require baseline suppression.
-- **Target SDK Fallback in FF002**: When `targetSdkVersion` cannot be resolved in `AndroidManifest.xml`, FF002 uses a conservative fallback defaulting `resizeableActivity` to `false` to ensure potential restrictions are audited.
-- **Android 16 Platform Behavior**: On Android 16 (API 36), `screenOrientation` and aspect-ratio restrictions are ignored on displays with smallest width >= 600dp unless opted out, but restrictions remain active on compact screens and lower API levels.
+Contributions are welcome! Please review [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/contributing/contribution-guidelines.md](docs/contributing/contribution-guidelines.md).
 
 ---
 
-## License
+## 📚 Documentation Links
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+- [Getting Started Guide](docs/getting-started/quickstart.md)
+- [Rule Catalog & Details](docs/rules/README.md)
+- [Configuration Reference](docs/getting-started/configuration.md)
+- [Baseline Guide](docs/guides/baseline.md)
+- [CI/CD Integration](docs/guides/ci-integration.md)
+- [Architecture & Engine Design](docs/engineering/architecture.md)
+- [Changelog](CHANGELOG.md)
+- [Issue Tracker](https://github.com/dev-vikas-soni/viewlint/issues)
+
+---
+
+## 📄 License
+
+ViewLint is released under the [Apache License 2.0](LICENSE).

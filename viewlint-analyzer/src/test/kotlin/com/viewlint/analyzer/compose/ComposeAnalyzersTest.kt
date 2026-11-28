@@ -73,22 +73,18 @@ class ComposeAnalyzersTest {
 
             val findings = HardcodedDimensionAnalyzer().analyze(context)
 
-            // TouchTarget48, MinBoundFlexible, and MaxBoundFlexibleAdaptive should be excluded
             assertTrue(findings.none { it.message.contains("TouchTarget48") })
             assertTrue(findings.none { it.message.contains("MinBoundFlexible") })
             assertTrue(findings.none { it.message.contains("MaxBoundFlexibleAdaptive") })
 
-            // Component65 should be reported with Confidence.MEDIUM
             val finding65 = findings.firstOrNull { it.message.contains("Component65") }
             assertTrue(finding65 != null)
             assertEquals(Confidence.MEDIUM, finding65!!.confidence)
 
-            // Component120 should be reported with Confidence.MEDIUM
             val finding120 = findings.firstOrNull { it.message.contains("Component120") }
             assertTrue(finding120 != null)
             assertEquals(Confidence.MEDIUM, finding120!!.confidence)
 
-            // BannerAdminCard121 should be reported with Confidence.HIGH
             val finding121 = findings.firstOrNull { it.message.contains("BannerAdminCard121") }
             assertTrue(finding121 != null)
             assertEquals(Confidence.HIGH, finding121!!.confidence)
@@ -194,7 +190,6 @@ class ComposeAnalyzersTest {
             import androidx.compose.ui.Modifier
             import androidx.compose.ui.unit.dp
 
-            // Utility function (not a composable)
             fun calculatePrice(base: Double): Double {
                 val factor = 1.2
                 return base * factor
@@ -222,7 +217,6 @@ class ComposeAnalyzersTest {
             )
 
             val findings = MissingAdaptiveHandlingAnalyzer().analyze(context)
-            // Should only flag DashboardMainScreen (screen container), ignoring calculatePrice and QuantitySelectorChip
             assertEquals(1, findings.size)
             assertEquals("FF009", findings.first().ruleId)
             assertTrue(findings.first().message.contains("DashboardMainScreen"))
@@ -310,7 +304,7 @@ class ComposeAnalyzersTest {
     }
 
     @Test
-    fun `FF007 ignores list items inside scrollable containers`() {
+    fun `FF007 flags fixed-height child cards inside scrollable ancestors per Phase 2 Rule 1`() {
         val dir = Files.createTempDirectory("viewlint-scroll-item-test").toFile()
         val ktFile = File(dir, "src/main/java/com/example/BannerAdminCard.kt")
         ktFile.parentFile.mkdirs()
@@ -342,7 +336,9 @@ class ComposeAnalyzersTest {
             )
 
             val findings = HardcodedDimensionAnalyzer().analyze(context)
-            assertTrue("Expected no FF007 findings for Card inside LazyColumn list", findings.isEmpty())
+            assertEquals("Scrollable ancestor LazyColumn does not make unscrollable fixed-height child Card safe", 1, findings.size)
+            assertEquals("FF007", findings.first().ruleId)
+            assertTrue(findings.first().evidence.contains("height(150.dp)"))
         } finally {
             dir.deleteRecursively()
         }

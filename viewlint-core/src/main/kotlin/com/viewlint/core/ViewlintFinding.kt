@@ -28,7 +28,8 @@ data class ViewlintFinding(
     val file: String,
     val evidence: String,
     val remediation: String,
-    val priority: Priority = calculatePriority(severity, confidence)
+    val priority: Priority = calculatePriority(severity, confidence),
+    val line: Int = 1
 ) {
     companion object {
         fun calculatePriority(severity: Severity, confidence: Confidence): Priority {

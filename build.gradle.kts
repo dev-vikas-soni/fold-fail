@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "io.github.dev-vikas-soni"
-    version = "0.9.0"
+    version = "1.0.0"
 
     plugins.withId("org.jetbrains.kotlin.jvm") {
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

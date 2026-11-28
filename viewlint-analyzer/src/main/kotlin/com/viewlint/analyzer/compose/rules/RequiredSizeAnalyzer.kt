@@ -1,5 +1,6 @@
 package com.viewlint.analyzer.compose.rules
 
+import com.viewlint.analyzer.compose.ComponentRole
 import com.viewlint.analyzer.compose.ComposeSourceParser
 import com.viewlint.core.Confidence
 import com.viewlint.core.Severity
@@ -27,7 +28,7 @@ class RequiredSizeAnalyzer : ViewlintRule {
                         if (call.contains("requiredWidth") || call.contains("requiredHeight") || call.contains("requiredSize")) {
                             val dpValue = parseDpValue(call) ?: 0.0
 
-                            val isContainerOrLarge = comp.isScreenOrContainer || (dpValue > 48.0 && !comp.isLeafOrSmallComponent)
+                            val isContainerOrLarge = comp.role == ComponentRole.SCREEN_OR_CONTAINER || (dpValue > 48.0 && comp.role != ComponentRole.LEAF_OR_SMALL)
                             val severity = if (isContainerOrLarge) Severity.WARNING else Severity.INFO
                             val confidence = if (isContainerOrLarge) Confidence.HIGH else Confidence.LOW
 
@@ -46,7 +47,8 @@ class RequiredSizeAnalyzer : ViewlintRule {
                                     confidence = confidence,
                                     file = sourcePath.toString(),
                                     evidence = call,
-                                    remediation = "Use standard width, height, or size modifiers instead of required variants unless overriding parent constraints is strictly necessary."
+                                    remediation = "Use standard width, height, or size modifiers instead of required variants unless overriding parent constraints is strictly necessary.",
+                                    line = comp.line
                                 )
                             )
                         }

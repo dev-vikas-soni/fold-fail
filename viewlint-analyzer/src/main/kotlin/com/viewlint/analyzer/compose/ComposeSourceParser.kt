@@ -2,10 +2,26 @@ package com.viewlint.analyzer.compose
 
 import java.io.File
 
+enum class ComponentRole {
+    SCREEN_OR_CONTAINER,
+    LEAF_OR_SMALL,
+    INPUT_SURFACE,
+    UNKNOWN
+}
+
+data class ParsedModifierChain(
+    val rawText: String,
+    val calls: List<String>,
+    val hasScrollModifier: Boolean,
+    val targetPrimitive: String? = null
+)
+
 data class ParsedComposable(
     val name: String,
     val text: String,
+    val modifierChains: List<ParsedModifierChain>,
     val modifierCalls: List<String>,
+    val role: ComponentRole,
     val hasAdaptiveCues: Boolean,
     val isScreenOrContainer: Boolean,
     val isLeafOrSmallComponent: Boolean,
@@ -25,7 +41,7 @@ data class ParsedKotlinFile(
 object ComposeSourceParser {
 
     private val screenOrContainerKeywords = listOf(
-        "screen", "page", "dashboard", "form", "scaffold", "navhost", "feed", "board", "dialog", "sheet", "window", "overview", "container"
+        "screen", "page", "dashboard", "form", "scaffold", "navhost", "card", "sheet", "panel", "dialog", "container", "overview"
     )
 
     private val leafOrSmallKeywords = listOf(
@@ -156,11 +172,14 @@ object ComposeSourceParser {
 
                 if (funcName != null) {
                     val funcText = funcTextBuilder.toString()
-                    val modifierCalls = extractModifierCalls(funcText)
+                    val chains = extractModifierChains(funcText)
+                    val modifierCalls = chains.flatMap { it.calls }
                     val hasAdaptive = hasAdaptiveCues(funcName, funcText)
-                    val isContainer = isContainerComponent(funcName, funcText)
                     val isInput = isInputSurfaceComponent(funcName, funcText)
                     val isLeaf = isLeafComponent(funcName, funcText, isInput)
+                    val isContainer = isContainerComponent(funcName, funcText)
+                    val role = determineRole(isInput, isLeaf, isContainer, funcText)
+
                     val internalScroll = hasInternalScrollState(funcText)
                     val textContent = hasVariableTextContent(funcText)
                     val scrollParent = hasScrollableContainer(funcText)
@@ -169,11 +188,13 @@ object ComposeSourceParser {
                         ParsedComposable(
                             name = funcName,
                             text = funcText,
+                            modifierChains = chains,
                             modifierCalls = modifierCalls,
+                            role = role,
                             hasAdaptiveCues = hasAdaptive,
-                            isScreenOrContainer = isContainer,
-                            isLeafOrSmallComponent = isLeaf,
-                            isInputSurface = isInput,
+                            isScreenOrContainer = (role == ComponentRole.SCREEN_OR_CONTAINER),
+                            isLeafOrSmallComponent = (role == ComponentRole.LEAF_OR_SMALL),
+                            isInputSurface = (role == ComponentRole.INPUT_SURFACE),
                             hasInternalScroll = internalScroll,
                             hasTextContent = textContent,
                             hasScrollableParent = scrollParent,
@@ -188,25 +209,106 @@ object ComposeSourceParser {
         return composables
     }
 
-    private fun extractModifierCalls(funcText: String): List<String> {
+    private fun determineRole(
+        isInput: Boolean,
+        isLeaf: Boolean,
+        isContainer: Boolean,
+        funcText: String
+    ): ComponentRole {
+        if (isInput) return ComponentRole.INPUT_SURFACE
+
+        if (isLeaf) {
+            val hasContainerStructures = funcText.contains("Column(") || funcText.contains("Row(") || funcText.contains("Card(") || funcText.contains("LazyColumn(")
+            if (!hasContainerStructures) {
+                return ComponentRole.LEAF_OR_SMALL
+            }
+            return ComponentRole.SCREEN_OR_CONTAINER
+        }
+
+        if (isContainer) {
+            return ComponentRole.SCREEN_OR_CONTAINER
+        }
+
+        return ComponentRole.UNKNOWN
+    }
+
+    private fun extractModifierChains(funcText: String): List<ParsedModifierChain> {
+        val chains = mutableListOf<ParsedModifierChain>()
+
+        val chainRegex = Regex("(?:[a-zA-Z0-9_]*\\.)?Modifier((?:\\.[a-zA-Z0-9_]+\\([^)]*\\))+)")
+        val matches = chainRegex.findAll(funcText)
+
+        for (match in matches) {
+            val fullChainText = match.value
+            val callsText = match.groupValues[1]
+
+            val calls = extractModifierCalls(callsText)
+            val hasScroll = calls.any {
+                it.contains("verticalScroll") || it.contains("horizontalScroll") || it.contains("scrollable")
+            }
+
+            val targetPrimitive = findTargetPrimitiveForChain(funcText, match.range.first)
+
+            chains.add(
+                ParsedModifierChain(
+                    rawText = fullChainText,
+                    calls = calls,
+                    hasScrollModifier = hasScroll,
+                    targetPrimitive = targetPrimitive
+                )
+            )
+        }
+
+        if (chains.isEmpty()) {
+            val calls = extractModifierCalls(funcText)
+            if (calls.isNotEmpty()) {
+                val hasScroll = calls.any {
+                    it.contains("verticalScroll") || it.contains("horizontalScroll") || it.contains("scrollable")
+                }
+                chains.add(
+                    ParsedModifierChain(
+                        rawText = funcText,
+                        calls = calls,
+                        hasScrollModifier = hasScroll,
+                        targetPrimitive = null
+                    )
+                )
+            }
+        }
+
+        return chains
+    }
+
+    private fun findTargetPrimitiveForChain(funcText: String, chainIndex: Int): String? {
+        val textBefore = funcText.substring(0, chainIndex).trimEnd()
+        val primitives = listOf("LazyColumn", "LazyRow", "LazyVerticalGrid", "LazyHorizontalGrid", "Column", "Row", "Box", "Card", "Scaffold")
+        for (prim in primitives) {
+            if (Regex("$prim\\s*\\(\\s*(?:modifier\\s*=\\s*)?$").containsMatchIn(textBefore)) {
+                return prim
+            }
+        }
+        return null
+    }
+
+    private fun extractModifierCalls(text: String): List<String> {
         val calls = mutableListOf<String>()
-        val length = funcText.length
+        val length = text.length
         var i = 0
         while (i < length) {
-            if (funcText[i] == '.') {
+            if (text[i] == '.') {
                 var j = i + 1
-                while (j < length && (funcText[j].isLetterOrDigit() || funcText[j] == '_')) {
+                while (j < length && (text[j].isLetterOrDigit() || text[j] == '_')) {
                     j++
                 }
-                if (j < length && funcText[j] == '(') {
+                if (j < length && text[j] == '(') {
                     var parenCount = 1
                     var k = j + 1
                     while (k < length && parenCount > 0) {
-                        if (funcText[k] == '(') parenCount++
-                        else if (funcText[k] == ')') parenCount--
+                        if (text[k] == '(') parenCount++
+                        else if (text[k] == ')') parenCount--
                         k++
                     }
-                    val fullCall = funcText.substring(i + 1, k).replace(Regex("\\s+"), " ")
+                    val fullCall = text.substring(i + 1, k).replace(Regex("\\s+"), " ")
                     calls.add(fullCall)
                     i = k - 1
                 }
@@ -275,12 +377,9 @@ object ComposeSourceParser {
         val nameMatches = screenOrContainerKeywords.any { nameLower.contains(it) }
         val textMatches = textLower.contains("scaffold") ||
             textLower.contains("navhost") ||
-            textLower.contains("lazycolumn") ||
-            textLower.contains("lazyrow") ||
-            textLower.contains("lazyverticalgrid") ||
-            textLower.contains("card(") ||
-            textLower.contains("column(") ||
-            textLower.contains("row(")
+            textLower.contains("listdetailpanescaffold") ||
+            textLower.contains("navigationsuitescaffold") ||
+            textLower.contains("supportingpanescaffold")
 
         return nameMatches || textMatches
     }

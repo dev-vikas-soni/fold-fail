@@ -10,7 +10,9 @@ import com.viewlint.analyzer.compose.rules.HardcodedDimensionAnalyzer
 import com.viewlint.analyzer.compose.rules.MissingAdaptiveHandlingAnalyzer
 import com.viewlint.analyzer.compose.rules.RequiredSizeAnalyzer
 import com.viewlint.analyzer.compose.rules.RestrictiveModifierChainsAnalyzer
+import com.viewlint.core.Confidence
 import com.viewlint.core.LayoutResource
+import com.viewlint.core.Severity
 import com.viewlint.core.ViewlintContext
 import com.viewlint.core.ViewlintEngine
 import org.junit.Assert.assertEquals
@@ -21,19 +23,36 @@ import java.nio.file.Files
 
 data class BenchmarkFixture(
     val id: String,
+    val description: String,
+    val isPositiveFixture: Boolean, // true = valid code (should NOT report expected defect), false = defect code (SHOULD report finding)
     val targetRule: String,
-    val isPositiveFixture: Boolean, // true = valid code (should NOT report finding), false = defect code (SHOULD report finding)
     val fileType: String, // "kt", "xml", "manifest"
     val fileContent: String,
+    val expectedSeverity: Severity? = null,
+    val expectedConfidence: Confidence? = null,
+    val expectedEvidence: String? = null,
+    val expectedLine: Int? = null,
+    val permittedAdditionalRules: List<String> = emptyList(),
     val notes: String = ""
 )
+
+data class RuleBenchmarkStats(
+    var tp: Int = 0,
+    var fp: Int = 0,
+    var tn: Int = 0,
+    var fn: Int = 0
+) {
+    val precision: Double get() = if (tp + fp > 0) (tp.toDouble() / (tp + fp)) * 100.0 else 100.0
+    val recall: Double get() = if (tp + fn > 0) (tp.toDouble() / (tp + fn)) * 100.0 else 100.0
+    val f1: Double get() = if (precision + recall > 0) (2 * precision * recall) / (precision + recall) else 0.0
+}
 
 class AccuracyBenchmarkTest {
 
     val fixtures = listOf(
-        // FX-01: OtpTextField character cell (Positive)
         BenchmarkFixture(
             id = "FX-01",
+            description = "OtpTextField character cell input surface",
             targetRule = "FF010",
             isPositiveFixture = true,
             fileType = "kt",
@@ -50,9 +69,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "Small input cell fixed dimensions exempt from FF010"
         ),
-        // FX-02: Touch target avatar 40dp (Positive)
         BenchmarkFixture(
             id = "FX-02",
+            description = "Touch target avatar 40dp",
             targetRule = "FF007",
             isPositiveFixture = true,
             fileType = "kt",
@@ -69,9 +88,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "Standard 40dp avatar touch target exempt"
         ),
-        // FX-03: Action Vector Icon 24dp (Positive)
         BenchmarkFixture(
             id = "FX-03",
+            description = "Action Vector Icon 24dp",
             targetRule = "FF007",
             isPositiveFixture = true,
             fileType = "kt",
@@ -88,9 +107,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "24dp standard icon size exempt"
         ),
-        // FX-04: Product Thumbnail Image 60dp (Positive)
         BenchmarkFixture(
             id = "FX-04",
+            description = "Product Thumbnail Image 60dp",
             targetRule = "FF007",
             isPositiveFixture = true,
             fileType = "kt",
@@ -107,9 +126,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "60dp pure image thumbnail without text content exempt"
         ),
-        // FX-05: Flexible Card widthIn (Positive)
         BenchmarkFixture(
             id = "FX-05",
+            description = "Flexible Card widthIn max constraint",
             targetRule = "FF007",
             isPositiveFixture = true,
             fileType = "kt",
@@ -126,9 +145,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "widthIn max constraint is responsive"
         ),
-        // FX-06: Flexible Panel heightIn (Positive)
         BenchmarkFixture(
             id = "FX-06",
+            description = "Flexible Panel heightIn max constraint",
             targetRule = "FF007",
             isPositiveFixture = true,
             fileType = "kt",
@@ -145,9 +164,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "heightIn max constraint is responsive"
         ),
-        // FX-07: SizeIn Box (Positive)
         BenchmarkFixture(
             id = "FX-07",
+            description = "SizeIn Box range constraint",
             targetRule = "FF007",
             isPositiveFixture = true,
             fileType = "kt",
@@ -164,9 +183,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "sizeIn range constraint is responsive"
         ),
-        // FX-08: GridCells Adaptive (Positive)
         BenchmarkFixture(
             id = "FX-08",
+            description = "GridCells Adaptive grid layout",
             targetRule = "FF009",
             isPositiveFixture = true,
             fileType = "kt",
@@ -185,9 +204,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "GridCells.Adaptive is responsive"
         ),
-        // FX-09: Parameter Adaptive State (Positive)
         BenchmarkFixture(
             id = "FX-09",
+            description = "Parameter Adaptive State isExpandedScreen",
             targetRule = "FF009",
             isPositiveFixture = true,
             fileType = "kt",
@@ -206,9 +225,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "isExpandedScreen adaptive branching parameter"
         ),
-        // FX-10: NavigationSuiteScaffold (Positive)
         BenchmarkFixture(
             id = "FX-10",
+            description = "NavigationSuiteScaffold component",
             targetRule = "FF009",
             isPositiveFixture = true,
             fileType = "kt",
@@ -225,9 +244,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "NavigationSuiteScaffold is adaptive component"
         ),
-        // FX-11: ListDetailPaneScaffold (Positive)
         BenchmarkFixture(
             id = "FX-11",
+            description = "ListDetailPaneScaffold component",
             targetRule = "FF009",
             isPositiveFixture = true,
             fileType = "kt",
@@ -244,9 +263,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "ListDetailPaneScaffold is adaptive pane layout"
         ),
-        // FX-12: XML with layout-sw600dp (Positive)
         BenchmarkFixture(
             id = "FX-12",
+            description = "XML layout with layout-sw600dp qualifier variant",
             targetRule = "FF003",
             isPositiveFixture = true,
             fileType = "xml",
@@ -257,9 +276,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "Fixed root width has sw600dp adaptive qualifier variant"
         ),
-        // FX-13: Content Card with Fixed Height & Variable Text on non-scroll (Negative)
         BenchmarkFixture(
             id = "FX-13",
+            description = "Content Card with Fixed Height & Variable Text on non-scroll layout",
             targetRule = "FF007",
             isPositiveFixture = false,
             fileType = "kt",
@@ -277,11 +296,15 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "height(150.dp)",
+            expectedLine = 6,
             notes = "Fixed height 150dp card with variable text and no scrolling"
         ),
-        // FX-14: Product Edit Sheet Fixed Height without Scroll (Negative)
         BenchmarkFixture(
             id = "FX-14",
+            description = "Product Edit Sheet Fixed Height without Scroll",
             targetRule = "FF007",
             isPositiveFixture = false,
             fileType = "kt",
@@ -299,11 +322,15 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "height(200.dp)",
+            expectedLine = 6,
             notes = "Fixed height 200dp sheet without internal scroll"
         ),
-        // FX-15: Required size override on container (Negative)
         BenchmarkFixture(
             id = "FX-15",
+            description = "Required size override on container",
             targetRule = "FF008",
             isPositiveFixture = false,
             fileType = "kt",
@@ -320,11 +347,16 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "requiredWidth(400.dp)",
+            expectedLine = 6,
+            permittedAdditionalRules = listOf("FF008", "FF009"),
             notes = "requiredWidth / requiredHeight overrides parent constraints on container"
         ),
-        // FX-16: AdminNotificationsScreen missing adaptive cues (Negative)
         BenchmarkFixture(
             id = "FX-16",
+            description = "AdminNotificationsScreen missing adaptive cues",
             targetRule = "FF009",
             isPositiveFixture = false,
             fileType = "kt",
@@ -345,11 +377,15 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.INFO,
+            expectedConfidence = Confidence.LOW,
+            expectedLine = 6,
+            permittedAdditionalRules = listOf("FF007"),
             notes = "Screen container without adaptive cues"
         ),
-        // FX-17: Locked Card both axes (Negative)
         BenchmarkFixture(
             id = "FX-17",
+            description = "Locked Card both axes fixed size",
             targetRule = "FF010",
             isPositiveFixture = false,
             fileType = "kt",
@@ -366,11 +402,15 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "width(320.dp), height(480.dp)",
+            expectedLine = 6,
             notes = "Fixed width 320dp and height 480dp locks both axes without scroll"
         ),
-        // FX-18: Activity Orientation Lock (Negative)
         BenchmarkFixture(
             id = "FX-18",
+            description = "Activity Orientation Lock in manifest",
             targetRule = "FF001",
             isPositiveFixture = false,
             fileType = "manifest",
@@ -381,11 +421,14 @@ class AccuracyBenchmarkTest {
                     </application>
                 </manifest>
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.MEDIUM,
+            expectedEvidence = "android:screenOrientation=\"portrait\"",
             notes = "Explicit portrait orientation lock in manifest"
         ),
-        // FX-19: Aspect Ratio Lock (Negative)
         BenchmarkFixture(
             id = "FX-19",
+            description = "Aspect Ratio Lock in manifest",
             targetRule = "FF002",
             isPositiveFixture = false,
             fileType = "manifest",
@@ -397,11 +440,14 @@ class AccuracyBenchmarkTest {
                     </application>
                 </manifest>
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.MEDIUM,
+            expectedEvidence = "android:maxAspectRatio=\"2.1\"",
             notes = "maxAspectRatio 2.1 with resizeableActivity false on SDK 23"
         ),
-        // FX-20: AbsoluteLayout Usage (Negative)
         BenchmarkFixture(
             id = "FX-20",
+            description = "AbsoluteLayout Usage in XML",
             targetRule = "FF006",
             isPositiveFixture = false,
             fileType = "xml",
@@ -410,11 +456,14 @@ class AccuracyBenchmarkTest {
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "<AbsoluteLayout>",
             notes = "Deprecated AbsoluteLayout usage"
         ),
-        // FX-21: Manifest without orientation lock (Positive)
         BenchmarkFixture(
             id = "FX-21",
+            description = "Manifest without orientation lock",
             targetRule = "FF001",
             isPositiveFixture = true,
             fileType = "manifest",
@@ -427,9 +476,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "unspecified orientation lock is allowed"
         ),
-        // FX-22: Manifest with resizeableActivity true (Positive)
         BenchmarkFixture(
             id = "FX-22",
+            description = "Manifest with resizeableActivity true",
             targetRule = "FF002",
             isPositiveFixture = true,
             fileType = "manifest",
@@ -443,9 +492,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "maxAspectRatio ignored by platform when resizeableActivity is true on SDK >= 24"
         ),
-        // FX-23: XML Root Layout match_parent (Positive)
         BenchmarkFixture(
             id = "FX-23",
+            description = "XML Root Layout match_parent",
             targetRule = "FF003",
             isPositiveFixture = true,
             fileType = "xml",
@@ -456,9 +505,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "Root layout match_parent is responsive"
         ),
-        // FX-24: XML Fixed Root Width Without Variant (Negative)
         BenchmarkFixture(
             id = "FX-24",
+            description = "XML Fixed Root Width Without Variant",
             targetRule = "FF003",
             isPositiveFixture = false,
             fileType = "xml",
@@ -467,11 +516,14 @@ class AccuracyBenchmarkTest {
                     android:layout_width="360dp"
                     android:layout_height="match_parent" />
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.MEDIUM,
+            expectedEvidence = "layout_width=\"360dp\"",
             notes = "Fixed 360dp root width without adaptive resource qualifier variant"
         ),
-        // FX-25: XML Small Icon Dimensions 48dp (Positive)
         BenchmarkFixture(
             id = "FX-25",
+            description = "XML Small Icon Dimensions 48dp",
             targetRule = "FF004",
             isPositiveFixture = true,
             fileType = "xml",
@@ -480,11 +532,12 @@ class AccuracyBenchmarkTest {
                     android:layout_width="48dp"
                     android:layout_height="48dp" />
             """.trimIndent(),
+            permittedAdditionalRules = listOf("FF003"),
             notes = "Small 48dp fixed dimensions on leaf control allowed"
         ),
-        // FX-26: XML Fixed Large Inner Container Dimensions (Negative)
         BenchmarkFixture(
             id = "FX-26",
+            description = "XML Fixed Large Inner Container Dimensions",
             targetRule = "FF004",
             isPositiveFixture = false,
             fileType = "xml",
@@ -493,11 +546,15 @@ class AccuracyBenchmarkTest {
                     android:layout_width="350dp"
                     android:layout_height="400dp" />
             """.trimIndent(),
+            expectedSeverity = Severity.INFO,
+            expectedConfidence = Confidence.LOW,
+            expectedEvidence = "layout_width=\"350dp\", layout_height=\"400dp\"",
+            permittedAdditionalRules = listOf("FF003"),
             notes = "Fixed 350x400dp on non-scroll inner container"
         ),
-        // FX-27: XML Complex Layout with sw600dp Variant (Positive)
         BenchmarkFixture(
             id = "FX-27",
+            description = "XML Simple Layout Node Count <= 15",
             targetRule = "FF005",
             isPositiveFixture = true,
             fileType = "xml",
@@ -510,9 +567,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "Simple layout (<=15 nodes) does not require adaptive variant"
         ),
-        // FX-28: XML Complex Layout Lacking Adaptive Variant (Negative)
         BenchmarkFixture(
             id = "FX-28",
+            description = "XML Complex Layout Lacking Adaptive Variant",
             targetRule = "FF005",
             isPositiveFixture = false,
             fileType = "xml",
@@ -539,11 +596,13 @@ class AccuracyBenchmarkTest {
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
             """.trimIndent(),
+            expectedSeverity = Severity.INFO,
+            expectedConfidence = Confidence.LOW,
             notes = "Complex layout (>15 nodes) lacking sw600dp adaptive variant"
         ),
-        // FX-29: XML ConstraintLayout Relative Positioning (Positive)
         BenchmarkFixture(
             id = "FX-29",
+            description = "XML ConstraintLayout Relative Positioning",
             targetRule = "FF006",
             isPositiveFixture = true,
             fileType = "xml",
@@ -554,9 +613,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "ConstraintLayout relative positioning allowed"
         ),
-        // FX-30: XML Hardcoded Absolute Coordinates layout_x (Negative)
         BenchmarkFixture(
             id = "FX-30",
+            description = "XML Hardcoded Absolute Coordinates layout_x / layout_y",
             targetRule = "FF006",
             isPositiveFixture = false,
             fileType = "xml",
@@ -565,13 +624,15 @@ class AccuracyBenchmarkTest {
                     <View android:layout_width="100dp" android:layout_height="100dp" android:layout_x="50dp" android:layout_y="100dp" />
                 </FrameLayout>
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.MEDIUM,
             notes = "Hardcoded layout_x / layout_y positioning"
         ),
-        // FX-31: Compose Internal Vertical Scroll Container (Positive for FF007)
         BenchmarkFixture(
             id = "FX-31",
+            description = "Scrollable ancestor LazyColumn with unscrollable fixed-height Card child (Phase 2 Rule 1)",
             targetRule = "FF007",
-            isPositiveFixture = true,
+            isPositiveFixture = false,
             fileType = "kt",
             fileContent = """
                 package com.example
@@ -580,18 +641,27 @@ class AccuracyBenchmarkTest {
                 import androidx.compose.ui.unit.dp
 
                 @Composable
-                fun ScrollableCard() {
-                    Column(modifier = Modifier.fillMaxWidth().height(250.dp).verticalScroll(rememberScrollState())) {
-                        Text("Dynamic Title")
-                        Text("Long description content that can scroll freely inside the fixed 250dp window.")
+                fun ScrollableAncestorCardScreen() {
+                    LazyColumn {
+                        items(10) {
+                            Card(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                                Text("Dynamic Title")
+                                Text("Long description content that can overflow 150dp window.")
+                            }
+                        }
                     }
                 }
             """.trimIndent(),
-            notes = "Internal verticalScroll prevents content clipping in fixed height container"
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "height(150.dp)",
+            expectedLine = 6,
+            permittedAdditionalRules = listOf("FF009"),
+            notes = "Phase 2 Rule 1: Scrollable ancestor LazyColumn does NOT make fixed-height child Card safe"
         ),
-        // FX-32: Compose Standard Size Modifier on Leaf (Positive for FF008)
         BenchmarkFixture(
             id = "FX-32",
+            description = "Compose Standard Size Modifier on Leaf",
             targetRule = "FF008",
             isPositiveFixture = true,
             fileType = "kt",
@@ -608,9 +678,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "Standard size(24.dp) modifier is not requiredSize"
         ),
-        // FX-33: Compose WindowSizeClass Adaptive Screen (Positive for FF009)
         BenchmarkFixture(
             id = "FX-33",
+            description = "Compose WindowSizeClass Adaptive Screen",
             targetRule = "FF009",
             isPositiveFixture = true,
             fileType = "kt",
@@ -629,9 +699,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "Explicit WindowSizeClass responsive layout handling"
         ),
-        // FX-34: Compose Fixed Width Only (Single Axis) (Positive for FF010)
         BenchmarkFixture(
             id = "FX-34",
+            description = "Compose Fixed Width Only (Single Axis)",
             targetRule = "FF010",
             isPositiveFixture = true,
             fileType = "kt",
@@ -648,11 +718,12 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
-            notes = "Width fixed at 280dp but height flexible (fillMaxHeight) is not locked on both axes"
+            permittedAdditionalRules = listOf("FF007"),
+            notes = "Width fixed at 280dp but height flexible (fillMaxHeight) is not locked on both axes for FF010"
         ),
-        // FX-35: Compose BoxWithConstraints Adaptive Container (Positive for FF009)
         BenchmarkFixture(
             id = "FX-35",
+            description = "Compose BoxWithConstraints Adaptive Container",
             targetRule = "FF009",
             isPositiveFixture = true,
             fileType = "kt",
@@ -673,9 +744,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "BoxWithConstraints responsive cue present"
         ),
-        // FX-36: Compose RequiredWidth on Leaf Button (Negative for FF008)
         BenchmarkFixture(
             id = "FX-36",
+            description = "Compose RequiredWidth on Leaf Button",
             targetRule = "FF008",
             isPositiveFixture = false,
             fileType = "kt",
@@ -692,11 +763,15 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.INFO,
+            expectedConfidence = Confidence.LOW,
+            expectedEvidence = "requiredWidth(120.dp)",
+            expectedLine = 6,
             notes = "requiredWidth on leaf button generates INFO finding for overriding parent constraints"
         ),
-        // FX-37: Compose Internal LazyColumn Container (Positive for FF010)
         BenchmarkFixture(
             id = "FX-37",
+            description = "Compose Internal LazyColumn Container (Phase 2 Rule 2)",
             targetRule = "FF010",
             isPositiveFixture = true,
             fileType = "kt",
@@ -715,9 +790,9 @@ class AccuracyBenchmarkTest {
             """.trimIndent(),
             notes = "LazyColumn internal scroll state exempt from FF010 locking both axes"
         ),
-        // FX-38: Compose RequiredSize on Content Container (Negative for FF008)
         BenchmarkFixture(
             id = "FX-38",
+            description = "Compose RequiredSize on Content Container",
             targetRule = "FF008",
             isPositiveFixture = false,
             fileType = "kt",
@@ -734,11 +809,15 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "requiredSize(500.dp)",
+            expectedLine = 6,
             notes = "requiredSize(500.dp) on screen container overrides parent constraints"
         ),
-        // FX-39: Compose Both Axes Fixed Size Modifier (Negative for FF010)
         BenchmarkFixture(
             id = "FX-39",
+            description = "Compose Both Axes Fixed Size Modifier on Container",
             targetRule = "FF010",
             isPositiveFixture = false,
             fileType = "kt",
@@ -755,11 +834,15 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "size(280.dp)",
+            expectedLine = 6,
             notes = "Modifier.size(280.dp) locks both dimensions on a non-leaf container"
         ),
-        // FX-40: Compose Large Hardcoded Width > 120dp on Container (Negative for FF007)
         BenchmarkFixture(
             id = "FX-40",
+            description = "Compose Large Hardcoded Width > 120dp on Container",
             targetRule = "FF007",
             isPositiveFixture = false,
             fileType = "kt",
@@ -777,18 +860,132 @@ class AccuracyBenchmarkTest {
                     }
                 }
             """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "width(350.dp)",
+            expectedLine = 6,
+            permittedAdditionalRules = listOf("FF009"),
             notes = "Hardcoded width(350.dp) on non-adaptive form container"
+        ),
+        BenchmarkFixture(
+            id = "FX-41",
+            description = "Internally scrollable content container (Phase 2 Rule 2)",
+            targetRule = "FF007",
+            isPositiveFixture = true,
+            fileType = "kt",
+            fileContent = """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.unit.dp
+
+                @Composable
+                fun InternalScrollContainer() {
+                    Column(modifier = Modifier.fillMaxWidth().height(250.dp).verticalScroll(rememberScrollState())) {
+                        Text("Header")
+                        Text("Dynamic content that can scroll freely inside 250dp window...")
+                    }
+                }
+            """.trimIndent(),
+            notes = "Phase 2 Rule 2: verticalScroll in modifier chain mitigates fixed height 250dp constraint"
+        ),
+        BenchmarkFixture(
+            id = "FX-42",
+            description = "Fixed-size content-bearing card eligible for analysis (Phase 2 Rule 3)",
+            targetRule = "FF010",
+            isPositiveFixture = false,
+            fileType = "kt",
+            fileContent = """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.unit.dp
+
+                @Composable
+                fun FixedContentCard() {
+                    Card(modifier = Modifier.width(350.dp).height(500.dp)) {
+                        Text("Title")
+                        Text("Description text...")
+                    }
+                }
+            """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.HIGH,
+            expectedEvidence = "width(350.dp), height(500.dp)",
+            expectedLine = 6,
+            notes = "Phase 2 Rule 3: Fixed-size content-bearing card must remain eligible for FF010 / FF007 analysis"
+        ),
+        BenchmarkFixture(
+            id = "FX-43",
+            description = "Unknown component role explicitly UNKNOWN (Phase 2 Rule 5)",
+            targetRule = "FF007",
+            isPositiveFixture = false,
+            fileType = "kt",
+            fileContent = """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.unit.dp
+
+                @Composable
+                fun CustomUnclassifiedWidget() {
+                    Column(modifier = Modifier.width(300.dp)) {
+                        Text("Custom Text")
+                    }
+                }
+            """.trimIndent(),
+            expectedSeverity = Severity.WARNING,
+            expectedConfidence = Confidence.MEDIUM,
+            expectedEvidence = "width(300.dp)",
+            expectedLine = 6,
+            notes = "Phase 2 Rule 5: Role is UNKNOWN (not guessed as Container), evaluated with Confidence.MEDIUM"
+        ),
+        BenchmarkFixture(
+            id = "FX-44",
+            description = "Intentionally fixed-size input control (Phase 2 Rule 4)",
+            targetRule = "FF007",
+            isPositiveFixture = true,
+            fileType = "kt",
+            fileContent = """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.unit.dp
+
+                @Composable
+                fun PinInputCell() {
+                    Box(modifier = Modifier.width(20.dp).height(50.dp))
+                }
+            """.trimIndent(),
+            notes = "Phase 2 Rule 4: Fixed-size input control is exempt"
+        ),
+        BenchmarkFixture(
+            id = "FX-45",
+            description = "Leaf graphics small avatar without text (Phase 2 Rule 4)",
+            targetRule = "FF007",
+            isPositiveFixture = true,
+            fileType = "kt",
+            fileContent = """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.unit.dp
+
+                @Composable
+                fun UserAvatarIcon() {
+                    Icon(modifier = Modifier.size(40.dp), contentDescription = null)
+                }
+            """.trimIndent(),
+            notes = "Phase 2 Rule 4: Pure leaf graphics without text exempt"
         )
     )
 
     @Test
-    fun `executes accuracy benchmark suite and verifies precision and recall`() {
-        val testDir = Files.createTempDirectory("accuracy-benchmark").toFile()
+    fun `executes evidence-driven accuracy benchmark suite and verifies precision and recall`() {
+        val testDir = Files.createTempDirectory("viewlint-evidence-benchmark").toFile()
 
-        var tp = 0
-        var fp = 0
-        var fn = 0
-        var tn = 0
+        val allRuleIds = listOf("FF001", "FF002", "FF003", "FF004", "FF005", "FF006", "FF007", "FF008", "FF009", "FF010")
+        val ruleStats = allRuleIds.associateWith { RuleBenchmarkStats() }.toMutableMap()
 
         try {
             for (fixture in fixtures) {
@@ -849,44 +1046,143 @@ class AccuracyBenchmarkTest {
                     kotlinSources = kotlinSources
                 )
 
-                val findings = engine.analyze(context).filter { it.ruleId == fixture.targetRule }
+                val allFindings = engine.analyze(context)
+                val targetRuleFindings = allFindings.filter { it.ruleId == fixture.targetRule }
+
+                val matchingTargetFindings = targetRuleFindings.filter { finding ->
+                    val matchesSeverity = fixture.expectedSeverity == null || finding.severity == fixture.expectedSeverity
+                    val matchesConfidence = fixture.expectedConfidence == null || finding.confidence == fixture.expectedConfidence
+                    val matchesEvidence = fixture.expectedEvidence == null || finding.evidence.contains(fixture.expectedEvidence)
+                    val matchesLine = fixture.expectedLine == null || finding.line == fixture.expectedLine
+                    matchesSeverity && matchesConfidence && matchesEvidence && matchesLine
+                }
+
+                val targetStats = ruleStats.getValue(fixture.targetRule)
 
                 if (fixture.isPositiveFixture) {
-                    if (findings.isEmpty()) {
-                        tn++
+                    if (matchingTargetFindings.isEmpty()) {
+                        targetStats.tn++
                     } else {
-                        fp++
-                        println("BENCHMARK FP in ${fixture.id} for rule ${fixture.targetRule}: ${findings.map { it.message }}")
+                        targetStats.fp++
+                        println("BENCHMARK FP in ${fixture.id} (${fixture.description}) for target rule ${fixture.targetRule}: $matchingTargetFindings")
                     }
                 } else {
-                    if (findings.isNotEmpty()) {
-                        tp++
+                    if (matchingTargetFindings.isNotEmpty()) {
+                        targetStats.tp++
                     } else {
-                        fn++
-                        println("BENCHMARK FN in ${fixture.id} for rule ${fixture.targetRule}: expected finding but got none")
+                        targetStats.fn++
+                        println("BENCHMARK FN in ${fixture.id} (${fixture.description}) for target rule ${fixture.targetRule}: expected finding matching evidence '${fixture.expectedEvidence}' on line ${fixture.expectedLine} but got $allFindings")
+                    }
+                }
+
+                val unpermittedFindings = allFindings.filter { finding ->
+                    finding.ruleId != fixture.targetRule && finding.ruleId !in fixture.permittedAdditionalRules
+                }
+
+                if (unpermittedFindings.isNotEmpty()) {
+                    for (unpermitted in unpermittedFindings) {
+                        ruleStats.getValue(unpermitted.ruleId).fp++
+                        println("BENCHMARK UNEXPECTED FP in ${fixture.id} (${fixture.description}) for unpermitted rule ${unpermitted.ruleId}: ${unpermitted.message}")
                     }
                 }
             }
 
-            val total = fixtures.size
-            val precision = if (tp + fp > 0) (tp.toDouble() / (tp + fp)) * 100 else 100.0
-            val recall = if (tp + fn > 0) (tp.toDouble() / (tp + fn)) * 100 else 100.0
+            var overallTp = 0
+            var overallFp = 0
+            var overallTn = 0
+            var overallFn = 0
 
-            println("==========================================")
-            println("VIEWLINT v0.9.2 ACCURACY BENCHMARK SUMMARY")
-            println("Total Fixtures Evaluated: $total")
-            println("True Positives (TP): $tp")
-            println("True Negatives (TN): $tn")
-            println("False Positives (FP): $fp")
-            println("False Negatives (FN): $fn")
-            println("Measured Precision: %.2f%%".format(precision))
-            println("Measured Recall: %.2f%%".format(recall))
-            println("==========================================")
+            println("=========================================================================================")
+            println("VIEWLINT v1.0.0 EVIDENCE-DRIVEN ACCURACY BENCHMARK BREAKDOWN PER RULE")
+            println("=========================================================================================")
+            println("%-8s | %-4s | %-4s | %-4s | %-4s | %-10s | %-8s | %-8s".format("Rule", "TP", "TN", "FP", "FN", "Precision", "Recall", "F1 Score"))
+            println("-----------------------------------------------------------------------------------------")
 
-            assertEquals("False Positives must be zero on benchmark suite", 0, fp)
-            assertEquals("False Negatives must be zero on benchmark suite", 0, fn)
-            assertTrue("Precision must be 100%", precision >= 99.0)
-            assertTrue("Recall must be 100%", recall >= 99.0)
+            for (ruleId in allRuleIds) {
+                val stats = ruleStats.getValue(ruleId)
+                overallTp += stats.tp
+                overallFp += stats.fp
+                overallTn += stats.tn
+                overallFn += stats.fn
+
+                println("%-8s | %-4d | %-4d | %-4d | %-4d | %-9.2f%% | %-7.2f%% | %-8.2f".format(
+                    ruleId, stats.tp, stats.tn, stats.fp, stats.fn, stats.precision, stats.recall, stats.f1
+                ))
+            }
+
+            val totalEvaluatedFixtures = overallTp + overallTn + overallFp + overallFn
+            val overallPrecision = if (overallTp + overallFp > 0) (overallTp.toDouble() / (overallTp + overallFp)) * 100.0 else 100.0
+            val overallRecall = if (overallTp + overallFn > 0) (overallTp.toDouble() / (overallTp + overallFn)) * 100.0 else 100.0
+            val overallF1 = if (overallPrecision + overallRecall > 0) (2 * overallPrecision * overallRecall) / (overallPrecision + overallRecall) else 0.0
+
+            println("-----------------------------------------------------------------------------------------")
+            println("%-8s | %-4d | %-4d | %-4d | %-4d | %-9.2f%% | %-7.2f%% | %-8.2f".format(
+                "OVERALL", overallTp, overallTn, overallFp, overallFn, overallPrecision, overallRecall, overallF1
+            ))
+            println("=========================================================================================")
+            println("Total Fixtures Evaluated: $totalEvaluatedFixtures")
+            println("DISCLAIMER: Benchmark results reflect performance on the synthetic fixture corpus")
+            println("and do not constitute proof of real-world production accuracy on arbitrary external codebases.")
+            println("=========================================================================================")
+
+            assertEquals("Total evaluated fixtures must equal fixture list size (45)", fixtures.size, totalEvaluatedFixtures)
+            assertEquals("False Positives must be zero on evidence-driven benchmark suite", 0, overallFp)
+            assertEquals("False Negatives must be zero on evidence-driven benchmark suite", 0, overallFn)
+            assertTrue("Overall Precision must be 100%", overallPrecision >= 99.0)
+            assertTrue("Overall Recall must be 100%", overallRecall >= 99.0)
+        } finally {
+            testDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `failing benchmark when finding is reported on wrong line`() {
+        val testDir = Files.createTempDirectory("viewlint-line-test").toFile()
+        try {
+            val ktFile = File(testDir, "src/main/java/com/example/WrongLine.kt")
+            ktFile.parentFile.mkdirs()
+            ktFile.writeText(
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.unit.dp
+
+                @Composable
+                fun FixedHeightCard() {
+                    Column(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                        Text("Title")
+                    }
+                }
+                """.trimIndent()
+            )
+
+            val context = ViewlintContext(
+                projectRoot = testDir.toPath(),
+                manifests = emptyList(),
+                kotlinSources = listOf(ktFile.toPath())
+            )
+
+            val findings = HardcodedDimensionAnalyzer().analyze(context)
+            assertEquals(1, findings.size)
+            val finding = findings.first()
+
+            // The actual finding is on line 6
+            assertEquals(6, finding.line)
+
+            // A fixture expecting line 999 MUST fail to match
+            val fixtureWithWrongLine = BenchmarkFixture(
+                id = "FX-TEST-LINE",
+                description = "Test wrong line number",
+                isPositiveFixture = false,
+                targetRule = "FF007",
+                fileType = "kt",
+                fileContent = "",
+                expectedLine = 999
+            )
+
+            val matches = findings.filter { it.line == fixtureWithWrongLine.expectedLine }
+            assertTrue("Finding on line 6 must not match expectedLine 999", matches.isEmpty())
         } finally {
             testDir.deleteRecursively()
         }

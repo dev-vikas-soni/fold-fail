@@ -23,12 +23,19 @@ class MissingAdaptiveHandlingAnalyzer : ViewlintRule {
                 if (parsed.error != null) continue
 
                 for (comp in parsed.composables) {
-                    // Do not analyze leaf composables, small controls, quantity selectors, or decorative elements
                     if (comp.isLeafOrSmallComponent) continue
 
                     // Only target genuine screen-level composables, forms, dashboards, or major content containers
-                    if (!comp.isScreenOrContainer) continue
+                    val nameLower = comp.name.lowercase()
+                    val textLower = comp.text.lowercase()
 
+                    val isGenuineScreen = nameLower.contains("screen") ||
+                        nameLower.contains("dashboard") ||
+                        nameLower.contains("page") ||
+                        textLower.contains("scaffold") ||
+                        textLower.contains("navhost")
+
+                    if (!isGenuineScreen) continue
                     if (comp.hasAdaptiveCues) continue
 
                     val hasMultipleModifiers = comp.modifierCalls.size >= 2
@@ -53,7 +60,8 @@ class MissingAdaptiveHandlingAnalyzer : ViewlintRule {
                                 confidence = Confidence.LOW,
                                 file = sourcePath.toString(),
                                 evidence = "Composable: ${comp.name} (${comp.modifierCalls.size} modifiers, ${comp.text.length} chars)",
-                                remediation = remediation
+                                remediation = remediation,
+                                line = comp.line
                             )
                         )
                     }

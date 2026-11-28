@@ -49,7 +49,7 @@ class ReportingTest {
         assertTrue(json.contains("\"projectName\": \"test-project\""))
         assertTrue(json.contains("\"confidence\": \"HIGH\""))
         assertTrue(json.contains("\"priority\": \"HIGH\""))
-        assertTrue(json.contains("toolVersion\": \"0.9.0\""))
+        assertTrue(json.contains("toolVersion\": \"1.0.0\""))
     }
 
     @Test
@@ -62,7 +62,7 @@ class ReportingTest {
         assertTrue(html.contains("FF001"))
         assertTrue(html.contains("HIGH CONFIDENCE"))
         assertTrue(html.contains("HIGH PRIORITY"))
-        assertTrue(html.contains("Viewlint v0.9.0"))
+        assertTrue(html.contains("Viewlint v1.0.0"))
         assertTrue(html.contains("--bg-page: #F8FAFC"))
         assertTrue(html.contains("--bg-surface: #FFFFFF"))
         assertTrue(html.contains("Top Adaptive Risks"))
@@ -86,7 +86,7 @@ class ReportingTest {
         val sarif = SarifReportWriter.write(sampleReport)
         assertTrue(sarif.contains("sarif-schema-2.1.0.json"))
         assertTrue(sarif.contains("FF001"))
-        assertTrue(sarif.contains("0.9.0"))
+        assertTrue(sarif.contains("1.0.0"))
     }
 
     @Test

@@ -24,7 +24,7 @@ data class ViewlintReportMetadata(
     val projectName: String
 ) {
     companion object {
-        const val VIEWLINT_VERSION = "0.9.0"
+        const val VIEWLINT_VERSION = "1.0.0"
     }
 }
 

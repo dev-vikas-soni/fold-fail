@@ -1,108 +1,109 @@
-# Independent Audit of ViewLint v0.9.1 Benchmark & Expanded v0.9.2 Benchmark Corpus
+# Independent Audit of ViewLint Benchmarks & v0.9.3 Evidence-Driven Corpus
 
 ## Executive Summary
 
-This document presents an independent, critical audit of the **ViewLint v0.9.1 Accuracy Benchmark** and documents the design, ground truth, and execution results of the expanded **v0.9.2 Benchmark Corpus**.
+This document presents a rigorous, evidence-driven audit of the **ViewLint Accuracy Benchmark** and documents the design, ground truth, and execution results of the **v0.9.3 Evidence-Driven Benchmark Suite**.
 
-The v0.9.1 release claimed 100% Precision, 100% Recall, and 100% F1-score based on a 20-fixture corpus (`FX-01` through `FX-20`). Our independent audit reveals that while the mathematical calculation on those 20 fixtures was correct, the claim of "100% rule accuracy" was **methodologically flawed** and **over-fit** due to severe coverage gaps:
-1. **Zero Fixtures** were present for `FF004` (Fixed Inner Dimension) and `FF005` (Missing Adaptive Resource Variants).
-2. **Single-Fixture Coverage** existed for `FF001`, `FF002`, `FF006`, `FF008`, and `FF010`.
-3. **Synthetic Bias**: Fixtures were hand-authored to mirror internal heuristic strings rather than real-world Kotlin syntax variants.
+In previous releases, historical accuracy claims (such as 100% precision and recall) were derived from small, 20-fixture suites that lacked assertion over exact finding evidence and omitted test instances for rules `FF004` and `FF005`.
 
-To establish semantic soundness, ViewLint v0.9.2 expands the benchmark suite to **40 distinct, multi-paradigm fixtures** (`FX-01` through `FX-40`), testing all 10 rules across positive, negative, and edge cases.
-
----
-
-## 1. Audit of the v0.9.1 20-Fixture Corpus
-
-### Fixture-by-Fixture Mapping & Ground Truth Audit
-
-| Fixture ID | Target Rule | Ground Truth | Expected Finding | Actual Finding | Expected Severity | Actual Severity | Confidence | Source | Independent Review |
-|---|---|---|---|---|---|---|---|---|---|
-| **FX-01** | `FF010` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-02** | `FF007` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-03** | `FF007` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-04** | `FF007` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-05** | `FF007` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-06** | `FF007` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-07** | `FF007` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-08** | `FF009` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-09** | `FF009` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-10** | `FF009` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-11** | `FF009` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-12** | `FF003` | Positive (Valid) | None | None | N/A | N/A | High | Synthetic | Audited (v0.9.2) |
-| **FX-13** | `FF007` | Negative (Defect)| FF007 | FF007 | WARNING | WARNING | High | Synthetic | Audited (v0.9.2) |
-| **FX-14** | `FF007` | Negative (Defect)| FF007 | FF007 | WARNING | WARNING | High | Synthetic | Audited (v0.9.2) |
-| **FX-15** | `FF008` | Negative (Defect)| FF008 | FF008 | WARNING | WARNING | High | Synthetic | Audited (v0.9.2) |
-| **FX-16** | `FF009` | Negative (Defect)| FF009 | FF009 | INFO | INFO | Low | Synthetic | Audited (v0.9.2) |
-| **FX-17** | `FF010` | Negative (Defect)| FF010 | FF010 | WARNING | WARNING | Medium | Synthetic | Audited (v0.9.2) |
-| **FX-18** | `FF001` | Negative (Defect)| FF001 | FF001 | WARNING | WARNING | Medium | Synthetic | Audited (v0.9.2) |
-| **FX-19** | `FF002` | Negative (Defect)| FF002 | FF002 | WARNING | WARNING | Medium | Synthetic | Audited (v0.9.2) |
-| **FX-20** | `FF006` | Negative (Defect)| FF006 | FF006 | WARNING | WARNING | High | Synthetic | Audited (v0.9.2) |
-
-### Methodological Evaluation of v0.9.1 Claims
-
-1. **Mathematical vs Methodological Accuracy**:
-   - On the 20 fixtures tested, $TP = 8, TN = 12, FP = 0, FN = 0$.
-   - $\text{Precision} = \frac{8}{8 + 0} = 100\%$, $\text{Recall} = \frac{8}{8 + 0} = 100\%$.
-   - **Flaw**: Claiming $100\%$ accuracy for the entire ViewLint analyzer from this sample is statistically invalid because rules `FF004` and `FF005` had zero test instances, meaning their real-world recall was completely unmeasured.
-
-2. **Absence of Negative and Positive Control Balance**:
-   - `FF001` had 0 positive fixtures (only 1 negative).
-   - `FF002` had 0 positive fixtures (only 1 negative).
-   - `FF003` had 0 negative fixtures (only 1 positive).
-   - `FF004` had 0 positive and 0 negative fixtures.
-   - `FF005` had 0 positive and 0 negative fixtures.
-   - `FF006` had 0 positive fixtures (only 1 negative).
+ViewLint v0.9.3 introduces a **45-fixture evidence-driven benchmark** in `AccuracyBenchmarkTest.kt` that:
+1. Validates exact rule ID, severity, confidence, evidence substring, and line number for every fixture.
+2. Fails the build if unexpected findings from unpermitted rules trigger.
+3. Reports per-rule breakdown of True Positives (TP), True Negatives (TN), False Positives (FP), and False Negatives (FN).
+4. Reconciles the fixture accounting perfectly: **19 TP + 26 TN = 45 Total Fixtures**.
+5. Explicitly states that synthetic benchmark performance does **not** constitute proof of real-world production accuracy on external codebases.
 
 ---
 
-## 2. Expanded v0.9.2 Benchmark Matrix (`FX-01` – `FX-40`)
+## 1. Audit of Historical Benchmark Accounting & Discrepancies
 
-To rectify these deficiencies, the benchmark suite in `AccuracyBenchmarkTest.kt` was expanded to **40 fixtures**, providing balanced positive and negative evaluation for all 10 rules:
+### Reconciled Fixture Enumeration (`FX-01` through `FX-45`)
 
-| Rule ID | Rule Name | Positive Fixtures (Valid) | Negative Fixtures (Defects) | Total |
-|---|---|---|---|---|
-| **FF001** | Orientation Restriction | FX-21 | FX-18 | 2 |
-| **FF002** | Aspect Ratio Lock | FX-22 | FX-19 | 2 |
-| **FF003** | Fixed Root Width | FX-12, FX-23 | FX-24 | 3 |
-| **FF004** | Fixed Inner Dimension | FX-25 | FX-26 | 2 |
-| **FF005** | Missing Adaptive Variants | FX-27 | FX-28 | 2 |
-| **FF006** | Fragile Layout Positioning | FX-29 | FX-20, FX-30 | 3 |
-| **FF007** | Hardcoded Dimensions (Compose)| FX-02..07, FX-31 | FX-13, FX-14, FX-40 | 10 |
-| **FF008** | Required Size Overrides | FX-32 | FX-15, FX-36, FX-38 | 4 |
-| **FF009** | Missing Adaptive Handling | FX-08..11, FX-33, FX-35 | FX-16 | 7 |
-| **FF010** | Restrictive Modifier Chains | FX-01, FX-34, FX-37 | FX-17, FX-39 | 5 |
-| **Total** | **All 10 Rules** | **24** | **16** | **40** |
+| Fixture ID | Target Rule | Classification | Ground Truth | Expected Line | Evidence Substring |
+|---|---|---|---|---|---|
+| **FX-01** | `FF010` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-02** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-03** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-04** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-05** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-06** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-07** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-08** | `FF009` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-09** | `FF009` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-10** | `FF009` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-11** | `FF009` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-12** | `FF003` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-13** | `FF007` | True Positive (TP) | Negative | Line 6 | `height(150.dp)` |
+| **FX-14** | `FF007` | True Positive (TP) | Negative | Line 6 | `height(200.dp)` |
+| **FX-15** | `FF008` | True Positive (TP) | Negative | Line 6 | `requiredWidth(400.dp)` |
+| **FX-16** | `FF009` | True Positive (TP) | Negative | Line 6 | N/A |
+| **FX-17** | `FF010` | True Positive (TP) | Negative | Line 6 | `width(320.dp), height(480.dp)` |
+| **FX-18** | `FF001` | True Positive (TP) | Negative | N/A | `android:screenOrientation="portrait"` |
+| **FX-19** | `FF002` | True Positive (TP) | Negative | N/A | `android:maxAspectRatio="2.1"` |
+| **FX-20** | `FF006` | True Positive (TP) | Negative | N/A | `<AbsoluteLayout>` |
+| **FX-21** | `FF001` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-22** | `FF002` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-23** | `FF003` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-24** | `FF003` | True Positive (TP) | Negative | N/A | `layout_width="360dp"` |
+| **FX-25** | `FF004` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-26** | `FF004` | True Positive (TP) | Negative | N/A | `layout_width="350dp", layout_height="400dp"` |
+| **FX-27** | `FF005` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-28** | `FF005` | True Positive (TP) | Negative | N/A | N/A |
+| **FX-29** | `FF006` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-30** | `FF006` | True Positive (TP) | Negative | N/A | N/A |
+| **FX-31** | `FF007` | True Positive (TP) | Negative | Line 6 | `height(150.dp)` |
+| **FX-32** | `FF008` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-33** | `FF009` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-34** | `FF010` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-35** | `FF009` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-36** | `FF008` | True Positive (TP) | Negative | Line 6 | `requiredWidth(120.dp)` |
+| **FX-37** | `FF010` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-38** | `FF008` | True Positive (TP) | Negative | Line 6 | `requiredSize(500.dp)` |
+| **FX-39** | `FF010` | True Positive (TP) | Negative | Line 6 | `size(280.dp)` |
+| **FX-40** | `FF007` | True Positive (TP) | Negative | Line 6 | `width(350.dp)` |
+| **FX-41** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-42** | `FF010` | True Positive (TP) | Negative | Line 6 | `width(350.dp), height(500.dp)` |
+| **FX-43** | `FF007` | True Positive (TP) | Negative | Line 6 | `width(300.dp)` |
+| **FX-44** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
+| **FX-45** | `FF007` | True Negative (TN) | Positive | N/A | N/A |
 
-### Key New Edge Cases Introduced in v0.9.2:
-- **`FX-24`**: Root `<LinearLayout>` with fixed `360dp` width lacking `layout-sw600dp` or `layout-w600dp` variants.
-- **`FX-26`**: Inner layout container with `350dp` x `400dp` hardcoded dimensions on non-scroll layout.
-- **`FX-28`**: Complex XML layout (>15 nodes) lacking alternative adaptive resources.
-- **`FX-30`**: Absolute positioning via `android:layout_x` and `android:layout_y` attributes (uncovered bug during audit where `android:` prefix was missing in dictionary lookup).
-- **`FX-31`**: Fixed height container (`250.dp`) with `verticalScroll(rememberScrollState())` demonstrating proper internal scrolling mitigation.
-- **`FX-34`**: Fixed width sidebar menu (`280.dp`) with `fillMaxHeight()`, proving single-axis constraints are not flagged as dual-axis locked chains (`FF010`).
-- **`FX-37`**: `LazyColumn` with fixed `300.dp` width and `400.dp` height, confirming internal lazy list scrolling prevents `FF010` dual-axis false positives.
+### Total Accounting Reconciled
+- **True Positives (TP)**: 19
+- **True Negatives (TN)**: 26
+- **False Positives (FP)**: 0
+- **False Negatives (FN)**: 0
+- **Total Evaluated Fixtures**: **45** ($19 + 26 = 45$).
 
 ---
 
-## 3. Measured v0.9.2 Benchmark Results
+## 2. Measured v0.9.3 Evidence-Driven Benchmark Results
 
-Running the expanded 40-fixture suite in `AccuracyBenchmarkTest.kt`:
+Execution output from `AccuracyBenchmarkTest.kt`:
 
 ```text
-==========================================
-VIEWLINT v0.9.2 ACCURACY BENCHMARK SUMMARY
-Total Fixtures Evaluated: 40
-True Positives (TP): 16
-True Negatives (TN): 24
-False Positives (FP): 0
-False Negatives (FN): 0
-Measured Precision: 100.00%
-Measured Recall: 100.00%
-==========================================
+=========================================================================================
+VIEWLINT v0.9.3 EVIDENCE-DRIVEN ACCURACY BENCHMARK BREAKDOWN PER RULE
+=========================================================================================
+Rule     | TP   | TN   | FP   | FN   | Precision  | Recall   | F1 Score
+-----------------------------------------------------------------------------------------
+FF001    | 1    | 1    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF002    | 1    | 1    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF003    | 1    | 2    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF004    | 1    | 1    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF005    | 1    | 1    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF006    | 2    | 1    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF007    | 5    | 9    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF008    | 3    | 1    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF009    | 1    | 6    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+FF010    | 3    | 3    | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+-----------------------------------------------------------------------------------------
+OVERALL  | 19   | 26   | 0    | 0    | 100.00 %   | 100.00 % | 100.00
+=========================================================================================
+Total Fixtures Evaluated: 45
+DISCLAIMER: Benchmark results reflect performance on the synthetic fixture corpus
+and do not constitute proof of real-world production accuracy on arbitrary external codebases.
+=========================================================================================
 ```
 
-### Verification Note & Limitation Warning
 > [!IMPORTANT]
-> While the expanded benchmark suite achieves 100% Precision and 100% Recall across all 40 controlled fixtures, **synthetic benchmark accuracy must never be conflated with real-world project accuracy**. Real-world Kotlin codebases contain complex expression trees, custom modifier extensions, dynamic configuration states, and indirect layout abstractions that lie outside regex-based static text heuristics. See `CROSS_PROJECT_VALIDATION.md` for real-world empirical findings.
+> **Methodological Disclaimer**: High synthetic precision and recall confirm internal engine consistency and regression protection on known code patterns. However, they **do not** prove 100% real-world accuracy on complex external repositories with indirect modifier abstractions.
