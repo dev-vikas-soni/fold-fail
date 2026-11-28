@@ -10,16 +10,16 @@ import com.viewlint.core.reporting.sarif.SarifReportWriter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Test
 import java.io.File
 import java.nio.file.Files
+import org.junit.Test
 
 class ReportingTest {
 
     private val sampleFinding = ViewlintFinding(
         ruleId = "FF001",
         title = "Activity orientation is restricted",
-        message = "MainActivity restricts orientation to 'portrait'.",
+        message = "MainActivity restricts orientation to 'portrait' & <script>alert('xss')</script>.",
         severity = Severity.WARNING,
         confidence = Confidence.HIGH,
         file = "src/main/AndroidManifest.xml",
@@ -43,15 +43,17 @@ class ReportingTest {
     )
 
     @Test
-    fun `JsonReportWriter generates valid json`() {
+    fun `JsonReportWriter generates valid json with priority and string escaping`() {
         val json = JsonReportWriter.write(sampleReport)
         assertTrue(json.contains("\"ruleId\": \"FF001\""))
         assertTrue(json.contains("\"projectName\": \"test-project\""))
         assertTrue(json.contains("\"confidence\": \"HIGH\""))
+        assertTrue(json.contains("\"priority\": \"HIGH\""))
+        assertTrue(json.contains("toolVersion\": \"0.9.0\""))
     }
 
     @Test
-    fun `HtmlReportWriter generates rich developer-tool html report with top risks and screen summaries`() {
+    fun `HtmlReportWriter generates modern light theme html report with escaping and authoritative version`() {
         val html = HtmlReportWriter.write(sampleReport)
         assertTrue(html.contains("<!DOCTYPE html>"))
         assertTrue(html.contains("Viewlint"))
@@ -59,11 +61,19 @@ class ReportingTest {
         assertTrue(html.contains("test-project"))
         assertTrue(html.contains("FF001"))
         assertTrue(html.contains("HIGH CONFIDENCE"))
+        assertTrue(html.contains("HIGH PRIORITY"))
+        assertTrue(html.contains("Viewlint v0.9.0"))
+        assertTrue(html.contains("--bg-page: #F8FAFC"))
+        assertTrue(html.contains("--bg-surface: #FFFFFF"))
         assertTrue(html.contains("Top Adaptive Risks"))
         assertTrue(html.contains("Screen & File Risk Summaries"))
         assertTrue(html.contains("searchInput"))
         assertTrue(html.contains("controls-bar"))
         assertTrue(html.contains("MEDIUM ADAPTIVE RISK"))
+
+        // Verify HTML escaping of special characters
+        assertTrue("Script tag should be HTML escaped", html.contains("&lt;script&gt;"))
+        assertFalse("Unescaped script tag should not exist in HTML", html.contains("<script>alert"))
 
         // Verify offline rendering (no external CDN scripts or remote fonts)
         assertFalse(html.contains("https://cdn."))
@@ -76,6 +86,7 @@ class ReportingTest {
         val sarif = SarifReportWriter.write(sampleReport)
         assertTrue(sarif.contains("sarif-schema-2.1.0.json"))
         assertTrue(sarif.contains("FF001"))
+        assertTrue(sarif.contains("0.9.0"))
     }
 
     @Test

@@ -27,15 +27,22 @@ class RequiredSizeAnalyzer : ViewlintRule {
                         if (call.contains("requiredWidth") || call.contains("requiredHeight") || call.contains("requiredSize")) {
                             val dpValue = parseDpValue(call) ?: 0.0
 
-                            // Assign Confidence: HIGH for container/panel required sizes (>48dp), LOW for small icons/badges
-                            val confidence = if (dpValue > 48.0 || comp.isScreenOrContainer) Confidence.HIGH else Confidence.LOW
+                            val isContainerOrLarge = comp.isScreenOrContainer || (dpValue > 48.0 && !comp.isLeafOrSmallComponent)
+                            val severity = if (isContainerOrLarge) Severity.WARNING else Severity.INFO
+                            val confidence = if (isContainerOrLarge) Confidence.HIGH else Confidence.LOW
+
+                            val message = if (isContainerOrLarge) {
+                                "Composable '${comp.name}' uses required size modifier '$call' on a content container, overriding parent layout constraints and risking clipping across variable window sizes."
+                            } else {
+                                "Composable '${comp.name}' uses required size modifier '$call' on a small element, overriding incoming constraints."
+                            }
 
                             add(
                                 ViewlintFinding(
                                     ruleId = id,
                                     title = "Composable uses restrictive required size",
-                                    message = "Composable '${comp.name}' uses required size modifier '$call', which overrides incoming parent layout constraints and risks clipping on smaller or resized windows.",
-                                    severity = Severity.WARNING,
+                                    message = message,
+                                    severity = severity,
                                     confidence = confidence,
                                     file = sourcePath.toString(),
                                     evidence = call,

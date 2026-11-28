@@ -35,6 +35,7 @@ object JsonReportWriter {
             sb.append("      \"message\": \"${escapeJson(finding.message)}\",\n")
             sb.append("      \"severity\": \"${finding.severity}\",\n")
             sb.append("      \"confidence\": \"${finding.confidence}\",\n")
+            sb.append("      \"priority\": \"${finding.priority}\",\n")
             sb.append("      \"file\": \"${escapeJson(finding.file)}\",\n")
             sb.append("      \"evidence\": \"${escapeJson(finding.evidence)}\",\n")
             sb.append("      \"remediation\": \"${escapeJson(finding.remediation)}\"\n")

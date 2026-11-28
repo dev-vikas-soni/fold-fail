@@ -2,6 +2,28 @@
 
 All notable changes to Viewlint will be documented in this file.
 
+## [0.9.0] — Modern Light Theme Report & Priority Engine Upgrade
+
+### Highlights
+- **Modern Light Theme HTML Report**: Complete light theme redesign with crisp Slate typography (`#0F172A`), soft off-white canvas (`#F8FAFC`), white card surfaces, soft pastel badges for severity, confidence, and priority, sticky interactive filter/search controls bar, live matching count indicator, and Top Adaptive Risks dashboard.
+- **Deterministic Priority Model**: Added `Priority` (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`) computed deterministically from `Severity` and `Confidence` across all finding records and report formats (Console, JSON, HTML, SARIF).
+- **Rule Precision Refinements**:
+  - `FF007`: Recognized `widthIn(max = ...)` / `heightIn(max = ...)` max-width range constraints as responsive design patterns rather than hardcoded dimensions. Extended visual component exclusions to progress indicators, switches, checkboxes, ratings, images, and thumbnails.
+  - `FF008`: Calibrated `requiredSize` severity/confidence depending on whether used on content containers (`WARNING` / `HIGH` confidence) vs small visual elements (`INFO` / `LOW` confidence).
+  - `FF009`: Restricted adaptive responsibility analysis to top-level screen composables, scaffolds, and page containers, ignoring reusable item cards and helper functions.
+  - `FF010`: Excluded small visual icons/buttons from dual-axis lock warnings.
+- **Single Authoritative Version Source**: Unified version string (`0.9.0`) across all metadata structures, report outputs, plugin descriptors, and documentation.
+
+### Installation
+
+```kotlin
+plugins {
+    id("io.github.dev-vikas-soni.viewlint") version "0.9.0"
+}
+```
+
+---
+
 ## [0.8.0] — Analyzer Precision & Report Intelligence Upgrade
 
 ### Highlights

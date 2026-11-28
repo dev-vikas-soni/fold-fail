@@ -21,13 +21,14 @@ data class ParsedKotlinFile(
 object ComposeSourceParser {
 
     private val screenOrContainerKeywords = listOf(
-        "screen", "page", "content", "pane", "dashboard", "form", "layout", "container",
-        "host", "scaffold", "feed", "view", "banner", "section", "card", "board", "dialog", "sheet"
+        "screen", "page", "dashboard", "form", "scaffold", "navhost", "feed", "board", "dialog", "sheet", "window", "overview"
     )
 
     private val leafOrSmallKeywords = listOf(
         "icon", "avatar", "badge", "divider", "spacer", "chip", "button", "tab",
-        "indicator", "thumb", "handle", "logo", "bullet", "selector", "quantity", "price", "label", "counter"
+        "indicator", "thumb", "handle", "logo", "bullet", "selector", "quantity", "price",
+        "label", "counter", "progress", "progressbar", "checkbox", "switch", "radio",
+        "image", "thumbnail", "photo", "pic", "graphic", "illustration", "dot", "star", "rating"
     )
 
     fun parse(file: File): ParsedKotlinFile {
@@ -156,7 +157,14 @@ object ComposeSourceParser {
         val nameLower = funcName.lowercase()
         val textLower = funcText.lowercase()
         val nameMatches = leafOrSmallKeywords.any { nameLower.contains(it) }
-        val textMatches = textLower.contains("icon(") || textLower.contains("divider(") || textLower.contains("spacer(")
+        val textMatches = textLower.contains("icon(") ||
+            textLower.contains("divider(") ||
+            textLower.contains("spacer(") ||
+            textLower.contains("circularprogressindicator(") ||
+            textLower.contains("linearprogressindicator(") ||
+            textLower.contains("checkbox(") ||
+            textLower.contains("switch(") ||
+            textLower.contains("image(")
         return nameMatches || textMatches
     }
 }

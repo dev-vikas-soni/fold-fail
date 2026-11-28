@@ -30,12 +30,12 @@ class HardcodedDimensionAnalyzer : ViewlintRule {
                     for (call in comp.modifierCalls) {
                         if (!call.contains("dp") || call.contains("required")) continue
 
-                        // Check dimension modifiers: width, height, size, widthIn, heightIn
+                        // Check dimension modifiers: width, height, size
                         val isDimensionCall = call.contains("width") || call.contains("height") || call.contains("size")
                         if (!isDimensionCall) continue
 
-                        // Ignore minimum bounds (e.g. widthIn(min = 48.dp) or heightIn(min = 56.dp))
-                        if (call.contains("min") && !call.contains("max")) continue
+                        // Do not treat flexible range modifiers (widthIn / heightIn) as rigid fixed-width/height content containers
+                        if (call.contains("widthIn") || call.contains("heightIn")) continue
 
                         val dpValue = parseDpValue(call) ?: continue
 

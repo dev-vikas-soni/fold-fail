@@ -19,10 +19,14 @@ enum class QualityGateLevel {
 data class ViewlintReportMetadata(
     val schemaVersion: String = "1.0",
     val toolName: String = "Viewlint",
-    val toolVersion: String = "0.7.1",
+    val toolVersion: String = VIEWLINT_VERSION,
     val generatedAt: String,
     val projectName: String
-)
+) {
+    companion object {
+        const val VIEWLINT_VERSION = "0.9.0"
+    }
+}
 
 data class ViewlintSummary(
     val totalFindings: Int,

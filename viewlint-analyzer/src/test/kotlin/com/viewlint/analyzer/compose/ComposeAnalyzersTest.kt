@@ -5,6 +5,7 @@ import com.viewlint.analyzer.compose.rules.MissingAdaptiveHandlingAnalyzer
 import com.viewlint.analyzer.compose.rules.RequiredSizeAnalyzer
 import com.viewlint.analyzer.compose.rules.RestrictiveModifierChainsAnalyzer
 import com.viewlint.core.Confidence
+import com.viewlint.core.Severity
 import com.viewlint.core.ViewlintContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -55,6 +56,11 @@ class ComposeAnalyzersTest {
             fun MinBoundFlexible() {
                 Box(modifier = Modifier.widthIn(min = 48.dp))
             }
+
+            @Composable
+            fun MaxBoundFlexibleAdaptive() {
+                Box(modifier = Modifier.widthIn(max = 400.dp))
+            }
             """.trimIndent()
         )
 
@@ -67,9 +73,10 @@ class ComposeAnalyzersTest {
 
             val findings = HardcodedDimensionAnalyzer().analyze(context)
 
-            // TouchTarget48 and MinBoundFlexible should be excluded
+            // TouchTarget48, MinBoundFlexible, and MaxBoundFlexibleAdaptive should be excluded
             assertTrue(findings.none { it.message.contains("TouchTarget48") })
             assertTrue(findings.none { it.message.contains("MinBoundFlexible") })
+            assertTrue(findings.none { it.message.contains("MaxBoundFlexibleAdaptive") })
 
             // Component65 should be reported with Confidence.MEDIUM
             val finding65 = findings.firstOrNull { it.message.contains("Component65") }
@@ -91,7 +98,7 @@ class ComposeAnalyzersTest {
     }
 
     @Test
-    fun `ignores standard small component dimensions like icons avatars spacers and chips`() {
+    fun `ignores standard small component dimensions like icons avatars spacers progress and chips`() {
         val dir = Files.createTempDirectory("viewlint-compose-small-test").toFile()
         val ktFile = File(dir, "src/main/java/com/example/SmallComponents.kt")
         ktFile.parentFile.mkdirs()
@@ -107,6 +114,8 @@ class ComposeAnalyzersTest {
                 Icon(modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.height(16.dp))
                 Chip(modifier = Modifier.height(48.dp))
+                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                Switch(modifier = Modifier.size(24.dp))
             }
             """.trimIndent()
         )
@@ -119,14 +128,14 @@ class ComposeAnalyzersTest {
             )
 
             val findings = HardcodedDimensionAnalyzer().analyze(context)
-            assertTrue("Expected no FF007 findings for standard small icon, avatar, spacer, or chip dimensions", findings.isEmpty())
+            assertTrue("Expected no FF007 findings for standard small icon, avatar, spacer, or switch dimensions", findings.isEmpty())
         } finally {
             dir.deleteRecursively()
         }
     }
 
     @Test
-    fun `FF008 requiredSize assigns confidence based on size`() {
+    fun `FF008 requiredSize assigns severity and confidence based on component role`() {
         val dir = Files.createTempDirectory("viewlint-required-test").toFile()
         val ktFile = File(dir, "src/main/java/com/example/RequiredComponent.kt")
         ktFile.parentFile.mkdirs()
@@ -139,12 +148,14 @@ class ComposeAnalyzersTest {
 
             @Composable
             fun SmallIconRequired() {
-                Box(modifier = Modifier.requiredSize(24.dp))
+                Icon(modifier = Modifier.requiredSize(24.dp))
             }
 
             @Composable
-            fun LargeCardRequired() {
-                Box(modifier = Modifier.requiredWidth(300.dp))
+            fun MainDashboardScreen() {
+                Column(modifier = Modifier.requiredWidth(300.dp)) {
+                    Text("Content")
+                }
             }
             """.trimIndent()
         )
@@ -160,9 +171,11 @@ class ComposeAnalyzersTest {
             assertEquals(2, findings.size)
 
             val smallFinding = findings.first { it.message.contains("SmallIconRequired") }
+            assertEquals(Severity.INFO, smallFinding.severity)
             assertEquals(Confidence.LOW, smallFinding.confidence)
 
-            val largeFinding = findings.first { it.message.contains("LargeCardRequired") }
+            val largeFinding = findings.first { it.message.contains("MainDashboardScreen") }
+            assertEquals(Severity.WARNING, largeFinding.severity)
             assertEquals(Confidence.HIGH, largeFinding.confidence)
         } finally {
             dir.deleteRecursively()
@@ -213,6 +226,49 @@ class ComposeAnalyzersTest {
             assertEquals(1, findings.size)
             assertEquals("FF009", findings.first().ruleId)
             assertTrue(findings.first().message.contains("DashboardMainScreen"))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `FF010 ignores small visual components with fixed size and flags fixed content containers`() {
+        val dir = Files.createTempDirectory("viewlint-ff010-test").toFile()
+        val ktFile = File(dir, "src/main/java/com/example/ChainsTest.kt")
+        ktFile.parentFile.mkdirs()
+        ktFile.writeText(
+            """
+            package com.example
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.unit.dp
+
+            @Composable
+            fun ActionButtonIcon() {
+                Icon(modifier = Modifier.width(24.dp).height(24.dp))
+            }
+
+            @Composable
+            fun LockedContentContainer() {
+                Column(modifier = Modifier.width(400.dp).height(600.dp)) {
+                    Text("Locked panel")
+                }
+            }
+            """.trimIndent()
+        )
+
+        try {
+            val context = ViewlintContext(
+                projectRoot = dir.toPath(),
+                manifests = emptyList(),
+                kotlinSources = listOf(ktFile.toPath())
+            )
+
+            val findings = RestrictiveModifierChainsAnalyzer().analyze(context)
+            assertEquals(1, findings.size)
+            assertEquals("FF010", findings.first().ruleId)
+            assertTrue(findings.first().message.contains("LockedContentContainer"))
+            assertTrue(findings.none { it.message.contains("ActionButtonIcon") })
         } finally {
             dir.deleteRecursively()
         }

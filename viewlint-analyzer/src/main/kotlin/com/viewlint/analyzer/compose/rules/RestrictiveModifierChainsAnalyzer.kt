@@ -25,21 +25,29 @@ class RestrictiveModifierChainsAnalyzer : ViewlintRule {
                 for (comp in parsed.composables) {
                     if (comp.hasAdaptiveCues) continue
 
-                    val hasWidth = comp.modifierCalls.any { it.contains("width") && it.contains("dp") }
-                    val hasHeight = comp.modifierCalls.any { it.contains("height") && it.contains("dp") }
-                    val hasSize = comp.modifierCalls.any { it.contains("size") && it.contains("dp") }
+                    // Ignore visual leaf / small components (icons, badges, avatars, spacers, buttons <= 64dp)
+                    if (comp.isLeafOrSmallComponent) continue
 
-                    if ((hasWidth && hasHeight) || hasSize) {
+                    val fixedWidthCall = comp.modifierCalls.find { it.contains("width") && it.contains("dp") && !it.contains("widthIn") }
+                    val fixedHeightCall = comp.modifierCalls.find { it.contains("height") && it.contains("dp") && !it.contains("heightIn") }
+                    val fixedSizeCall = comp.modifierCalls.find { it.contains("size") && it.contains("dp") && !it.contains("required") }
+
+                    val isLockedBothAxes = (fixedWidthCall != null && fixedHeightCall != null) || fixedSizeCall != null
+
+                    if (isLockedBothAxes) {
+                        val evidence = listOfNotNull(fixedWidthCall, fixedHeightCall, fixedSizeCall).joinToString(", ")
+                        val confidence = if (comp.isScreenOrContainer) Confidence.HIGH else Confidence.MEDIUM
+
                         add(
                             ViewlintFinding(
                                 ruleId = id,
                                 title = "Restrictive modifier chain combination",
-                                message = "Composable '${comp.name}' combines fixed width and height or size modifiers, heavily constraining space across screen size changes.",
+                                message = "Composable '${comp.name}' combines fixed width and height or fixed size modifiers ($evidence), locking component bounds in both horizontal and vertical axes.",
                                 severity = Severity.WARNING,
-                                confidence = Confidence.HIGH,
+                                confidence = confidence,
                                 file = sourcePath.toString(),
-                                evidence = comp.modifierCalls.filter { it.contains("dp") }.joinToString(", "),
-                                remediation = "Avoid locking both width and height to fixed dp values. Use weight, fillMaxSize, or responsive sizing constraints."
+                                evidence = evidence,
+                                remediation = "Avoid locking both width and height to fixed dp values on content containers. Use weight, fillMaxSize, or responsive sizing constraints."
                             )
                         )
                     }
